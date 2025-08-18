@@ -28,6 +28,8 @@ type NoImprovement struct {
 	target        float64
 }
 
+var _ StoppingCriterion = &NoImprovement{}
+
 func (n *NoImprovement) Call(rnd *rand.Rand, best, current State) bool {
 	if !n.isInitialized || best.Objective() < n.target {
 		n.target = best.Objective()
