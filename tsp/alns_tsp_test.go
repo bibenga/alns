@@ -23,7 +23,7 @@ func TestTsp(t *testing.T) {
 
 	a.OnOutcome = func(outcome alns.Outcome, cand alns.State) {
 		if outcome == alns.BEST {
-			slog.Info("New best", "Objective", cand.Objective())
+			slog.Debug("New best", "Objective", cand.Objective())
 		}
 	}
 
@@ -43,12 +43,14 @@ func TestTsp(t *testing.T) {
 
 	sel := alns.NewRouletteWheel([]float64{3, 2, 1, 0.5}, 0.8, 3, 1, nil)
 	accept := alns.HillClimbing{}
-	stop := alns.MaxRuntime{MaxRuntime: 3 * time.Second}
+	stop := alns.MaxRuntime{MaxRuntime: 1 * time.Second}
 	// stop := MaxIterations{MaxIterations: 10}
 	result := a.Iterate(initSol, &sel, &accept, &stop)
 	slog.Info("best solution", "Objective", result.BestState.Objective())
 
 	slog.Info("statistics",
+		"IterationCount", result.Statistics.IterationCount(),
+		"TotalRuntime", result.Statistics.TotalRuntime(),
 		"DestroyOperatorCounts", result.Statistics.DestroyOperatorCounts,
 		"RepairOperatorCounts", result.Statistics.RepairOperatorCounts,
 	)
