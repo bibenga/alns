@@ -40,3 +40,11 @@ func (s *Statistics) collectRepairOperator(name string, outcome Outcome) {
 	}
 	opStats[outcome] += 1
 }
+
+func (s *Statistics) IterationCount() uint {
+	return uint(len(s.Objectives))
+}
+
+func (s *Statistics) TotalRuntime() time.Duration {
+	return s.Runtimes[len(s.Runtimes)-1].Sub(s.Runtimes[0])
+}
