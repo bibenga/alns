@@ -14,6 +14,8 @@ import (
 func TestTsp(t *testing.T) {
 	a := alns.NewWithPCGRandom(1, 2)
 
+	a.CollectObjectives = true
+
 	destroyOperatorNames := []string{
 		"randomRemoval",
 		"pathRemoval",
@@ -28,23 +30,21 @@ func TestTsp(t *testing.T) {
 	}
 	a.AddRepairOperator(greedyRepair)
 
-	a.OnOutcome = func(outcome alns.Outcome, cand alns.State) {
+	a.Listener = func(outcome alns.Outcome, cand alns.State) {
 		if outcome == alns.Best {
 			// fmt.Printf("New best: %.4f\n", cand.Objective())
 		}
 	}
 
-	coords := COORDS
-	dists := dists(coords)
-
-	nodes := make([]int, len(coords))
-	for i := range len(coords) {
+	dists := dists(COORDS)
+	nodes := make([]int, len(COORDS))
+	for i := range len(COORDS) {
 		nodes[i] = i
 	}
 
-	var initSol alns.State
-	initSol = NewTspState(nodes, map[int]int{}, dists)
-	initSol = greedyRepair(initSol, a.Rnd)
+	// var initSol alns.State
+	initSol := NewTspState(nodes, map[int]int{}, dists)
+	initSol = greedyRepair(initSol, a.Rnd).(*TspState)
 
 	fmt.Printf("initial solution: %.4f\n", initSol.Objective())
 
@@ -56,8 +56,8 @@ func TestTsp(t *testing.T) {
 	fmt.Printf("best solution: %.4f\n", result.BestState.Objective())
 
 	fmt.Printf("statistics: IterationCount=%d; TotalRuntime=%s\n",
-		result.Statistics.IterationCount(),
-		result.Statistics.TotalRuntime(),
+		len(result.Statistics.Objectives),
+		result.Statistics.TotalRuntime,
 	)
 	fmt.Println("  destroy operators")
 	for i, name := range destroyOperatorNames {
@@ -69,7 +69,7 @@ func TestTsp(t *testing.T) {
 	}
 	fmt.Println("objectives")
 	for i, r := range result.Statistics.Objectives {
-		fmt.Printf("%4d: %12s - %.4f\n", i, r.Runtime, r.Objective)
+		fmt.Printf("%4d: %12s - %.4f\n", i, r.Elapsed, r.Objective)
 	}
 }
 
@@ -327,7 +327,7 @@ func randomRemoval(state alns.State, rnd *rand.Rand) alns.State {
 		idx := rnd.IntN(len(destroyed.nodes))
 		node := destroyed.nodes[idx]
 		if _, ok := destroyed.edges[node]; ok {
-			removed += 1
+			removed++
 			delete(destroyed.edges, node)
 		}
 	}

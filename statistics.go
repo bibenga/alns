@@ -6,25 +6,26 @@ import (
 )
 
 type Statistics struct {
-	Objectives            []IterationObjective // todo: make optional
+	TotalRuntime          time.Duration
+	Objectives            []IterationObjective
 	DestroyOperatorCounts []OperatorStatistics
 	RepairOperatorCounts  []OperatorStatistics
 }
 
 func newStatistics(numIterations int, numDestroy, numRepair int) Statistics {
-	var iterations []IterationObjective
+	var objectives []IterationObjective
 	if numIterations > 0 {
-		iterations = make([]IterationObjective, 0, numIterations)
+		objectives = make([]IterationObjective, 0, numIterations)
 	}
 	return Statistics{
-		Objectives:            iterations,
+		Objectives:            objectives,
 		DestroyOperatorCounts: make([]OperatorStatistics, numDestroy),
 		RepairOperatorCounts:  make([]OperatorStatistics, numRepair),
 	}
 }
 
 func (s *Statistics) collectObjective(t time.Duration, objective float64) {
-	s.Objectives = append(s.Objectives, IterationObjective{Runtime: t, Objective: objective})
+	s.Objectives = append(s.Objectives, IterationObjective{Elapsed: t, Objective: objective})
 }
 
 func (s *Statistics) collectOperators(dIdx, rIdx int, outcome Outcome) {
@@ -32,20 +33,12 @@ func (s *Statistics) collectOperators(dIdx, rIdx int, outcome Outcome) {
 	s.RepairOperatorCounts[rIdx][outcome]++
 }
 
-func (s *Statistics) IterationCount() int {
-	return len(s.Objectives)
-}
-
-func (s *Statistics) TotalRuntime() time.Duration {
-	return s.Objectives[len(s.Objectives)-1].Runtime
-}
-
 type IterationObjective struct {
+	Elapsed   time.Duration
 	Objective float64
-	Runtime   time.Duration
 }
 
-type OperatorStatistics [4]int
+type OperatorStatistics [4]int // see Outcome
 
 func (o OperatorStatistics) String() string {
 	return fmt.Sprintf(

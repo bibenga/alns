@@ -5,13 +5,14 @@ import (
 	"time"
 )
 
-type OnOutcome func(outcome Outcome, cand State)
+type Listener func(outcome Outcome, cand State)
 
 type ALNS struct {
-	Rnd              *rand.Rand
-	OnOutcome        OnOutcome
-	DestroyOperators []Operator
-	RepairOperators  []Operator
+	Rnd               *rand.Rand
+	Listener          Listener
+	CollectObjectives bool
+	DestroyOperators  []Operator
+	RepairOperators   []Operator
 }
 
 func New(rnd *rand.Rand) ALNS {
@@ -49,13 +50,17 @@ func (a *ALNS) Iterate(
 	best := initialSolution
 
 	numIterations := 0
-	if maxIterations, ok := stop.(*MaxIterations); ok {
-		numIterations = maxIterations.MaxIterations + 1
+	if a.CollectObjectives {
+		if maxIterations, ok := stop.(*MaxIterations); ok {
+			numIterations = maxIterations.MaxIterations + 1
+		}
 	}
 	stats := newStatistics(numIterations, len(a.DestroyOperators), len(a.RepairOperators))
 
 	started := time.Now()
-	stats.collectObjective(0, initialSolution.Objective())
+	if a.CollectObjectives {
+		stats.collectObjective(0, initialSolution.Objective())
+	}
 
 	for !stop.Call(a.Rnd, best, curr) {
 		dIdx, rIdx := opSelect.Call(a.Rnd, best, curr)
@@ -70,9 +75,12 @@ func (a *ALNS) Iterate(
 
 		opSelect.Update(cand, dIdx, rIdx, outcome)
 
-		stats.collectObjective(time.Since(started), curr.Objective())
+		if a.CollectObjectives {
+			stats.collectObjective(time.Since(started), curr.Objective())
+		}
 		stats.collectOperators(dIdx, rIdx, outcome)
 	}
+	stats.TotalRuntime = time.Since(started)
 
 	return Result{BestState: best, Statistics: stats}
 }
@@ -80,8 +88,8 @@ func (a *ALNS) Iterate(
 func (a *ALNS) evalCand(accept AcceptanceCriterion, best, curr, cand State) (State, State, Outcome) {
 	outcome := a.determineOutcome(accept, best, curr, cand)
 
-	if a.OnOutcome != nil {
-		a.OnOutcome(outcome, cand)
+	if a.Listener != nil {
+		a.Listener(outcome, cand)
 	}
 
 	switch outcome {
