@@ -3,7 +3,6 @@ package alns
 import (
 	"fmt"
 	"math/rand/v2"
-	"slices"
 )
 
 type OperatorSelectionScheme interface {
@@ -12,7 +11,7 @@ type OperatorSelectionScheme interface {
 }
 
 type RouletteWheel struct {
-	scores     []float64
+	scores     [4]float64
 	decay      float64
 	numDestroy int
 	numRepair  int
@@ -24,7 +23,7 @@ type RouletteWheel struct {
 var _ OperatorSelectionScheme = &RouletteWheel{}
 
 func NewRouletteWheel(
-	scores []float64,
+	scores [4]float64,
 	decay float64,
 	numDestroy int,
 	numRepair int,
@@ -50,9 +49,9 @@ func NewRouletteWheel(
 }
 
 func (r RouletteWheel) mustValid() {
-	if slices.Min(r.scores) < 0 {
-		panic("negative scores are not understood.")
-	}
+	// if slices.Min(r.scores) < 0 {
+	// 	panic("negative scores are not understood.")
+	// }
 
 	if len(r.scores) < 4 {
 		panic(fmt.Errorf("expected four scores, found %d", len(r.scores)))

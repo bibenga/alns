@@ -7,22 +7,22 @@ import (
 type Outcome int
 
 const (
-	BEST Outcome = iota
-	BETTER
-	ACCEPT
-	REJECT
+	Best Outcome = iota
+	Better
+	Accept
+	Reject
 )
 
 func (o Outcome) String() string {
 	switch o {
-	case BEST:
-		return "BEST"
-	case BETTER:
-		return "BETTER"
-	case ACCEPT:
-		return "ACCEPT"
-	case REJECT:
-		return "REJECT"
+	case Best:
+		return "Best"
+	case Better:
+		return "Better"
+	case Accept:
+		return "Accept"
+	case Reject:
+		return "Reject"
 	default:
 		return fmt.Sprintf("%%!Outcome(%d)", o)
 	}

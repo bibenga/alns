@@ -1,44 +1,35 @@
 package alns
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Statistics struct {
-	Objectives            []float64
-	Runtimes              []time.Time
-	DestroyOperatorCounts map[string][]int // operator name -> outcome -> count
-	RepairOperatorCounts  map[string][]int // operator name -> outcome -> count
+	Objectives            []IterationObjective // todo: make optional
+	DestroyOperatorCounts []OperatorStatistics
+	RepairOperatorCounts  []OperatorStatistics
 }
 
-func (s *Statistics) collectObjective(objective float64) {
-	s.Objectives = append(s.Objectives, objective)
+func newStatistics(numIterations int, numDestroy, numRepair int) Statistics {
+	var iterations []IterationObjective
+	if numIterations > 0 {
+		iterations = make([]IterationObjective, 0, numIterations)
+	}
+	return Statistics{
+		Objectives:            iterations,
+		DestroyOperatorCounts: make([]OperatorStatistics, numDestroy),
+		RepairOperatorCounts:  make([]OperatorStatistics, numRepair),
+	}
 }
 
-func (s *Statistics) collectRuntime(t time.Time) {
-	s.Runtimes = append(s.Runtimes, t)
+func (s *Statistics) collectObjective(t time.Duration, objective float64) {
+	s.Objectives = append(s.Objectives, IterationObjective{Runtime: t, Objective: objective})
 }
 
-func (s *Statistics) collectDestroyOperator(name string, outcome Outcome) {
-	if s.DestroyOperatorCounts == nil {
-		s.DestroyOperatorCounts = make(map[string][]int)
-	}
-	opStats, ok := s.DestroyOperatorCounts[name]
-	if !ok {
-		opStats = make([]int, 4)
-		s.DestroyOperatorCounts[name] = opStats
-	}
-	opStats[outcome] += 1
-}
-
-func (s *Statistics) collectRepairOperator(name string, outcome Outcome) {
-	if s.RepairOperatorCounts == nil {
-		s.RepairOperatorCounts = make(map[string][]int)
-	}
-	opStats, ok := s.RepairOperatorCounts[name]
-	if !ok {
-		opStats = make([]int, 4)
-		s.RepairOperatorCounts[name] = opStats
-	}
-	opStats[outcome] += 1
+func (s *Statistics) collectOperators(dIdx, rIdx int, outcome Outcome) {
+	s.DestroyOperatorCounts[dIdx][outcome]++
+	s.RepairOperatorCounts[rIdx][outcome]++
 }
 
 func (s *Statistics) IterationCount() int {
@@ -46,5 +37,22 @@ func (s *Statistics) IterationCount() int {
 }
 
 func (s *Statistics) TotalRuntime() time.Duration {
-	return s.Runtimes[len(s.Runtimes)-1].Sub(s.Runtimes[0])
+	return s.Objectives[len(s.Objectives)-1].Runtime
+}
+
+type IterationObjective struct {
+	Objective float64
+	Runtime   time.Duration
+}
+
+type OperatorStatistics [4]int
+
+func (o OperatorStatistics) String() string {
+	return fmt.Sprintf(
+		"{%s:%d %s:%d %s:%d %s:%d}",
+		Best, o[Best],
+		Better, o[Better],
+		Accept, o[Accept],
+		Reject, o[Reject],
+	)
 }

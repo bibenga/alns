@@ -23,18 +23,20 @@ func TestAlns(t *testing.T) {
 		current := state.(*FakeState)
 		destroyed := current.Clone()
 		return destroyed
-	}, "d")
+	})
 	a.AddRepairOperator(func(state State, rnd *rand.Rand) State {
 		current := state.(*FakeState)
 		current.objective = rand.Float64()
 		return current
-	}, "c")
+	})
 
 	initialSolution := FakeState{objective: 1}
-	opSelect := NewRouletteWheel([]float64{3, 2, 1, 0.5}, 0.8, 1, 1, nil)
+	opSelect := NewRouletteWheel([4]float64{3, 2, 1, 0.5}, 0.8, 1, 1, nil)
 	accept := HillClimbing{}
 	stop := MaxIterations{MaxIterations: 10}
 	res := a.Iterate(&initialSolution, &opSelect, &accept, &stop)
 	t.Log(*res.BestState.(*FakeState))
-	t.Log(res.Statistics)
+	t.Log(res.Statistics.Objectives)
+	t.Log(res.Statistics.DestroyOperatorCounts)
+	t.Log(res.Statistics.RepairOperatorCounts)
 }

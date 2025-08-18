@@ -10,29 +10,29 @@ type OnOutcome func(outcome Outcome, cand State)
 type ALNS struct {
 	Rnd              *rand.Rand
 	OnOutcome        OnOutcome
-	destroyOperators []operator
-	repairOperators  []operator
+	DestroyOperators []Operator
+	RepairOperators  []Operator
 }
 
-func New(rnd *rand.Rand) *ALNS {
-	return &ALNS{Rnd: rnd}
+func New(rnd *rand.Rand) ALNS {
+	return ALNS{Rnd: rnd}
 }
 
-func NewDefault() *ALNS {
+func NewDefault() ALNS {
 	return New(rand.New(&randomSource{}))
 }
 
-func NewWithPCGRandom(seed1, seed2 uint64) *ALNS {
+func NewWithPCGRandom(seed1, seed2 uint64) ALNS {
 	rnd := rand.New(rand.NewPCG(seed1, seed2))
 	return New(rnd)
 }
 
-func (a *ALNS) AddDestroyOperator(op Operator, name string) {
-	a.destroyOperators = append(a.destroyOperators, operator{call: op, name: name})
+func (a *ALNS) AddDestroyOperator(op Operator) {
+	a.DestroyOperators = append(a.DestroyOperators, op)
 }
 
-func (a *ALNS) AddRepairOperator(op Operator, name string) {
-	a.repairOperators = append(a.repairOperators, operator{call: op, name: name})
+func (a *ALNS) AddRepairOperator(op Operator) {
+	a.RepairOperators = append(a.RepairOperators, op)
 }
 
 func (a *ALNS) Iterate(
@@ -41,44 +41,38 @@ func (a *ALNS) Iterate(
 	accept AcceptanceCriterion,
 	stop StoppingCriterion,
 ) Result {
-	if len(a.destroyOperators) == 0 || len(a.repairOperators) == 0 {
+	if len(a.DestroyOperators) == 0 || len(a.RepairOperators) == 0 {
 		panic("Missing destroy or repair operators.")
 	}
 
 	curr := initialSolution
 	best := initialSolution
-	initObj := initialSolution.Objective()
 
-	// logger.debug(f"Initial solution has objective {init_obj:.2f}.")
+	numIterations := 0
+	if maxIterations, ok := stop.(*MaxIterations); ok {
+		numIterations = maxIterations.MaxIterations + 1
+	}
+	stats := newStatistics(numIterations, len(a.DestroyOperators), len(a.RepairOperators))
 
-	stats := Statistics{}
-	stats.collectObjective(initObj)
-	stats.collectRuntime(time.Now())
+	started := time.Now()
+	stats.collectObjective(0, initialSolution.Objective())
 
 	for !stop.Call(a.Rnd, best, curr) {
 		dIdx, rIdx := opSelect.Call(a.Rnd, best, curr)
-		destroyOp := a.destroyOperators[dIdx]
-		repairOp := a.repairOperators[rIdx]
+		destroyOp := a.DestroyOperators[dIdx]
+		repairOp := a.RepairOperators[rIdx]
 
-		// logger.debug(f"Selected operators {d_name} and {r_name}.")
-
-		destroyed := destroyOp.call(curr, a.Rnd)
-		cand := repairOp.call(destroyed, a.Rnd)
+		destroyed := destroyOp(curr, a.Rnd)
+		cand := repairOp(destroyed, a.Rnd)
 
 		var outcome Outcome
-		best, curr, outcome = a.evalCand(
-			accept, best, curr, cand,
-		)
+		best, curr, outcome = a.evalCand(accept, best, curr, cand)
 
 		opSelect.Update(cand, dIdx, rIdx, outcome)
 
-		stats.collectObjective(curr.Objective())
-		stats.collectRuntime(time.Now())
-		stats.collectDestroyOperator(destroyOp.name, outcome)
-		stats.collectRepairOperator(repairOp.name, outcome)
+		stats.collectObjective(time.Since(started), curr.Objective())
+		stats.collectOperators(dIdx, rIdx, outcome)
 	}
-
-	// logger.info(f"Finished iterating in {stats.total_runtime:.2f}s.")
 
 	return Result{BestState: best, Statistics: stats}
 }
@@ -90,37 +84,31 @@ func (a *ALNS) evalCand(accept AcceptanceCriterion, best, curr, cand State) (Sta
 		a.OnOutcome(outcome, cand)
 	}
 
-	if outcome == BEST {
+	switch outcome {
+	case Best:
 		return cand, cand, outcome
-	}
-	if outcome == REJECT {
+	case Reject:
 		return best, curr, outcome
+	default:
+		return best, cand, outcome
 	}
-	return best, cand, outcome
 }
 
 func (a *ALNS) determineOutcome(accept AcceptanceCriterion, best, curr, cand State) Outcome {
-	outcome := REJECT
-
-	// slog.Info("determine outcome",
-	// 	"best", best.Objective(),
-	// 	"curr", curr.Objective(),
-	// 	"cand", cand.Objective(),
-	// )
+	outcome := Reject
 
 	if accept.Call(a.Rnd, best, curr, cand) {
 		// accept candidate
-		outcome = ACCEPT
+		outcome = Accept
 
 		if cand.Objective() < curr.Objective() {
-			outcome = BETTER
+			outcome = Better
 		}
 	}
 
 	if cand.Objective() < best.Objective() {
 		// candidate is new best
-		// slog.Info("New best", "objective", cand.Objective())
-		outcome = BEST
+		outcome = Best
 	}
 
 	return outcome

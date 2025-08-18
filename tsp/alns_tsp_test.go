@@ -3,27 +3,34 @@ package tsp
 import (
 	"alns"
 	"cmp"
-	"log/slog"
+	"fmt"
 	"maps"
 	"math"
 	"math/rand/v2"
 	"slices"
 	"testing"
-	"time"
 )
 
 func TestTsp(t *testing.T) {
 	a := alns.NewWithPCGRandom(1, 2)
 
-	a.AddDestroyOperator(randomRemoval, "randomRemoval")
-	a.AddDestroyOperator(pathRemoval, "pathRemoval")
-	a.AddDestroyOperator(worstRemoval, "worstRemoval")
+	destroyOperatorNames := []string{
+		"randomRemoval",
+		"pathRemoval",
+		"worstRemoval",
+	}
+	a.AddDestroyOperator(randomRemoval)
+	a.AddDestroyOperator(pathRemoval)
+	a.AddDestroyOperator(worstRemoval)
 
-	a.AddRepairOperator(greedyRepair, "greedyRepair")
+	repairOperatorNames := []string{
+		"greedyRepair",
+	}
+	a.AddRepairOperator(greedyRepair)
 
 	a.OnOutcome = func(outcome alns.Outcome, cand alns.State) {
-		if outcome == alns.BEST {
-			slog.Debug("New best", "Objective", cand.Objective())
+		if outcome == alns.Best {
+			// fmt.Printf("New best: %.4f\n", cand.Objective())
 		}
 	}
 
@@ -39,21 +46,31 @@ func TestTsp(t *testing.T) {
 	initSol = NewTspState(nodes, map[int]int{}, dists)
 	initSol = greedyRepair(initSol, a.Rnd)
 
-	slog.Info("initial solution", "Objective", initSol.Objective())
+	fmt.Printf("initial solution: %.4f\n", initSol.Objective())
 
-	sel := alns.NewRouletteWheel([]float64{3, 2, 1, 0.5}, 0.8, 3, 1, nil)
+	sel := alns.NewRouletteWheel([4]float64{3, 2, 1, 0.5}, 0.8, len(a.DestroyOperators), len(a.RepairOperators), nil)
 	accept := alns.HillClimbing{}
-	stop := alns.MaxRuntime{MaxRuntime: 1 * time.Second}
-	// stop := MaxIterations{MaxIterations: 10}
+	// stop := alns.MaxRuntime{MaxRuntime: 1 * time.Second}
+	stop := alns.MaxIterations{MaxIterations: 10}
 	result := a.Iterate(initSol, &sel, &accept, &stop)
-	slog.Info("best solution", "Objective", result.BestState.Objective())
+	fmt.Printf("best solution: %.4f\n", result.BestState.Objective())
 
-	slog.Info("statistics",
-		"IterationCount", result.Statistics.IterationCount(),
-		"TotalRuntime", result.Statistics.TotalRuntime(),
-		"DestroyOperatorCounts", result.Statistics.DestroyOperatorCounts,
-		"RepairOperatorCounts", result.Statistics.RepairOperatorCounts,
+	fmt.Printf("statistics: IterationCount=%d; TotalRuntime=%s\n",
+		result.Statistics.IterationCount(),
+		result.Statistics.TotalRuntime(),
 	)
+	fmt.Println("  destroy operators")
+	for i, name := range destroyOperatorNames {
+		fmt.Printf("    %d: %14s; %s\n", i, name, result.Statistics.DestroyOperatorCounts[i])
+	}
+	fmt.Println("  repair operators")
+	for i, name := range repairOperatorNames {
+		fmt.Printf("    %d: %14s; %s\n", i, name, result.Statistics.RepairOperatorCounts[i])
+	}
+	fmt.Println("objectives")
+	for i, r := range result.Statistics.Objectives {
+		fmt.Printf("%4d: %12s - %.4f\n", i, r.Runtime, r.Objective)
+	}
 }
 
 var COORDS = [][2]float64{
