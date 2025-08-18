@@ -10,8 +10,8 @@ type StoppingCriterion interface {
 }
 
 type MaxIterations struct {
-	MaxIterations    uint
-	currentIteration uint
+	MaxIterations    int
+	currentIteration int
 }
 
 var _ StoppingCriterion = &MaxIterations{}
@@ -22,8 +22,8 @@ func (s *MaxIterations) Call(rnd *rand.Rand, best, current State) bool {
 }
 
 type NoImprovement struct {
-	MaxIterations uint
-	counter       uint
+	MaxIterations int
+	counter       int
 	isInitialized bool
 	target        float64
 }

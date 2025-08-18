@@ -13,7 +13,7 @@ import (
 )
 
 func TestTsp(t *testing.T) {
-	a := alns.NewDefault()
+	a := alns.NewWithPCGRandom(1, 2)
 
 	a.AddDestroyOperator(randomRemoval, "randomRemoval")
 	a.AddDestroyOperator(pathRemoval, "pathRemoval")

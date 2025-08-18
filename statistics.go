@@ -5,8 +5,8 @@ import "time"
 type Statistics struct {
 	Objectives            []float64
 	Runtimes              []time.Time
-	DestroyOperatorCounts map[string][]uint // operator name -> outcome -> count
-	RepairOperatorCounts  map[string][]uint // operator name -> outcome -> count
+	DestroyOperatorCounts map[string][]int // operator name -> outcome -> count
+	RepairOperatorCounts  map[string][]int // operator name -> outcome -> count
 }
 
 func (s *Statistics) collectObjective(objective float64) {
@@ -19,11 +19,11 @@ func (s *Statistics) collectRuntime(t time.Time) {
 
 func (s *Statistics) collectDestroyOperator(name string, outcome Outcome) {
 	if s.DestroyOperatorCounts == nil {
-		s.DestroyOperatorCounts = make(map[string][]uint)
+		s.DestroyOperatorCounts = make(map[string][]int)
 	}
 	opStats, ok := s.DestroyOperatorCounts[name]
 	if !ok {
-		opStats = make([]uint, 4)
+		opStats = make([]int, 4)
 		s.DestroyOperatorCounts[name] = opStats
 	}
 	opStats[outcome] += 1
@@ -31,18 +31,18 @@ func (s *Statistics) collectDestroyOperator(name string, outcome Outcome) {
 
 func (s *Statistics) collectRepairOperator(name string, outcome Outcome) {
 	if s.RepairOperatorCounts == nil {
-		s.RepairOperatorCounts = make(map[string][]uint)
+		s.RepairOperatorCounts = make(map[string][]int)
 	}
 	opStats, ok := s.RepairOperatorCounts[name]
 	if !ok {
-		opStats = make([]uint, 4)
+		opStats = make([]int, 4)
 		s.RepairOperatorCounts[name] = opStats
 	}
 	opStats[outcome] += 1
 }
 
-func (s *Statistics) IterationCount() uint {
-	return uint(len(s.Objectives))
+func (s *Statistics) IterationCount() int {
+	return len(s.Objectives)
 }
 
 func (s *Statistics) TotalRuntime() time.Duration {

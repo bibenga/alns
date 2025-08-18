@@ -9,9 +9,9 @@ type OnOutcome func(outcome Outcome, cand State)
 
 type ALNS struct {
 	Rnd              *rand.Rand
+	OnOutcome        OnOutcome
 	destroyOperators []operator
 	repairOperators  []operator
-	OnOutcome        OnOutcome
 }
 
 func New(rnd *rand.Rand) *ALNS {
@@ -22,7 +22,7 @@ func NewDefault() *ALNS {
 	return New(rand.New(&randomSource{}))
 }
 
-func NewPCGRandom(seed1, seed2 uint64) *ALNS {
+func NewWithPCGRandom(seed1, seed2 uint64) *ALNS {
 	rnd := rand.New(rand.NewPCG(seed1, seed2))
 	return New(rnd)
 }
@@ -73,9 +73,9 @@ func (a *ALNS) Iterate(
 		opSelect.Update(cand, dIdx, rIdx, outcome)
 
 		stats.collectObjective(curr.Objective())
+		stats.collectRuntime(time.Now())
 		stats.collectDestroyOperator(destroyOp.name, outcome)
 		stats.collectRepairOperator(repairOp.name, outcome)
-		stats.collectRuntime(time.Now())
 	}
 
 	// logger.info(f"Finished iterating in {stats.total_runtime:.2f}s.")
