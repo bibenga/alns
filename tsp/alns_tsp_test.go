@@ -12,9 +12,12 @@ import (
 )
 
 func TestTsp(t *testing.T) {
-	a := alns.NewWithPCGRandom(1, 2)
+	// https://alns.readthedocs.io/en/latest/examples/travelling_salesman_problem.html
 
-	a.CollectObjectives = true
+	a := alns.NewWithPCGRandom(1, 2)
+	// a := alns.NewDefault()
+
+	a.CollectObjectives = false
 
 	destroyOperatorNames := []string{
 		"randomRemoval",
@@ -50,7 +53,7 @@ func TestTsp(t *testing.T) {
 
 	sel := alns.NewRouletteWheel([4]float64{3, 2, 1, 0.5}, 0.8, len(a.DestroyOperators), len(a.RepairOperators), nil)
 	accept := alns.HillClimbing{}
-	// stop := alns.MaxRuntime{MaxRuntime: 1 * time.Second}
+	// stop := alns.MaxRuntime{MaxRuntime: 5 * time.Second}
 	stop := alns.MaxIterations{MaxIterations: 10}
 	result := a.Iterate(initSol, &sel, &accept, &stop)
 	fmt.Printf("best solution: %.4f\n", result.BestState.Objective())
