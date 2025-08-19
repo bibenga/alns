@@ -16,14 +16,14 @@ func weightedRandomIndex(rnd *rand.Rand, weights []float64) int {
 	value := rnd.Float64() * sum // adjusted value
 	for i, weight := range weights {
 		value -= weight
-		if value <= 0 || IsClose(value, 0, absTol) {
+		if value <= 0 || isClose(value, 0, absTol) {
 			return i
 		}
 	}
 	panic(fmt.Sprintf("arithmetic error: sum=%f, value=%f, weights=%v", sum, value, weights))
 }
 
-func IsClose(a, b, tol float64) bool {
+func isClose(a, b, tol float64) bool {
 	return math.Abs(a-b) <= tol
 }
 
