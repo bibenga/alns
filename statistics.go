@@ -6,6 +6,7 @@ import (
 )
 
 type Statistics struct {
+	IterationCount        uint
 	TotalRuntime          time.Duration
 	Objectives            []IterationObjective
 	DestroyOperatorCounts []OperatorStatistics

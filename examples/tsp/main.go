@@ -1,4 +1,4 @@
-package tsp
+package main
 
 import (
 	"alns"
@@ -8,10 +8,10 @@ import (
 	"math"
 	"math/rand/v2"
 	"slices"
-	"testing"
+	"time"
 )
 
-func TestTsp(t *testing.T) {
+func main() {
 	// https://alns.readthedocs.io/en/latest/examples/travelling_salesman_problem.html
 
 	a := alns.NewWithPCGRandom(1, 2)
@@ -49,17 +49,18 @@ func TestTsp(t *testing.T) {
 	initSol := NewTspState(nodes, map[int]int{}, dists)
 	initSol = greedyRepair(initSol, a.Rnd).(*TspState)
 
+	fmt.Println("optimal solution: 564")
 	fmt.Printf("initial solution: %.4f\n", initSol.Objective())
 
 	sel := alns.NewRouletteWheel([4]float64{3, 2, 1, 0.5}, 0.8, len(a.DestroyOperators), len(a.RepairOperators), nil)
 	accept := alns.HillClimbing{}
-	// stop := alns.MaxRuntime{MaxRuntime: 5 * time.Second}
-	stop := alns.MaxIterations{MaxIterations: 10}
+	stop := alns.MaxRuntime{MaxRuntime: 1 * time.Second}
+	// stop := alns.MaxIterations{MaxIterations: 10}
 	result := a.Iterate(initSol, &sel, &accept, &stop)
 	fmt.Printf("best solution: %.4f\n", result.BestState.Objective())
 
 	fmt.Printf("statistics: IterationCount=%d; TotalRuntime=%s\n",
-		len(result.Statistics.Objectives),
+		result.Statistics.IterationCount,
 		result.Statistics.TotalRuntime,
 	)
 	fmt.Println("  destroy operators")

@@ -58,6 +58,7 @@ func (a *ALNS) Iterate(
 	stats := newStatistics(numIterations, len(a.DestroyOperators), len(a.RepairOperators))
 
 	started := time.Now()
+	stats.IterationCount++
 	if a.CollectObjectives {
 		stats.collectObjective(0, initialSolution.Objective())
 	}
@@ -75,6 +76,7 @@ func (a *ALNS) Iterate(
 
 		opSelect.Update(cand, dIdx, rIdx, outcome)
 
+		stats.IterationCount++
 		if a.CollectObjectives {
 			stats.collectObjective(time.Since(started), curr.Objective())
 		}
