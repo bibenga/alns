@@ -14,8 +14,7 @@ import (
 func main() {
 	// https://alns.readthedocs.io/en/latest/examples/travelling_salesman_problem.html
 
-	a := alns.NewWithPCGRandom(1, 2)
-	// a := alns.NewDefault()
+	a := alns.NewDefault()
 
 	a.CollectObjectives = false
 
