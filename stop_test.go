@@ -1,6 +1,7 @@
 package alns
 
 import (
+	"math"
 	"testing"
 	"time"
 )
@@ -32,4 +33,40 @@ func TestMaxRuntime(t *testing.T) {
 	if !(100 <= elapsed && elapsed <= 105) {
 		t.Fatalf("expected duration 100ms, actual %d", elapsed)
 	}
+}
+
+func TestNoImprovement(t *testing.T) {
+	t.Run("Simple", func(t *testing.T) {
+		stop := NoImprovement{MaxIterations: 10}
+		best := FakeState{objective: 1}
+		curr := FakeState{objective: 1}
+		i := 0
+		for !stop.Call(nil, best, curr) {
+			i++
+		}
+		if i != 10 {
+			t.Fatalf("10 iterations expected, actual %d iterations", i)
+		}
+		if stop.counter != 10 {
+			t.Fatalf("number 10 expected, actual number %d", stop.counter)
+		}
+	})
+
+	t.Run("SimulatedDecrease", func(t *testing.T) {
+		stop := NoImprovement{MaxIterations: 10}
+		best := FakeState{objective: 100}
+		curr := FakeState{objective: 100}
+		i := 0
+		for !stop.Call(nil, best, curr) {
+			best.objective = max(math.Round(curr.objective-1), 0)
+			curr.objective = max(math.Round(curr.objective-1), 0)
+			i++
+		}
+		if i != 110 {
+			t.Fatalf("110 iterations expected, actual %d iterations", i)
+		}
+		if stop.counter != 10 {
+			t.Fatalf("number 110 expected, actual number %d", stop.counter)
+		}
+	})
 }

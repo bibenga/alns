@@ -21,25 +21,6 @@ func (s *MaxIterations) Call(rnd *rand.Rand, best, current State) bool {
 	return s.currentIteration > s.MaxIterations
 }
 
-type NoImprovement struct {
-	MaxIterations int
-	counter       int
-	isInitialized bool
-	target        float64
-}
-
-var _ StoppingCriterion = &NoImprovement{}
-
-func (n *NoImprovement) Call(rnd *rand.Rand, best, current State) bool {
-	if !n.isInitialized || best.Objective() < n.target {
-		n.target = best.Objective()
-		n.counter = 0
-	} else {
-		n.counter++
-	}
-	return n.counter >= n.MaxIterations
-}
-
 type MaxRuntime struct {
 	MaxRuntime time.Duration
 	started    time.Time
@@ -53,4 +34,24 @@ func (s *MaxRuntime) Call(rnd *rand.Rand, best, current State) bool {
 		return false
 	}
 	return time.Since(s.started) > s.MaxRuntime
+}
+
+type NoImprovement struct {
+	MaxIterations int
+	counter       int
+	isInitialized bool
+	target        float64
+}
+
+var _ StoppingCriterion = &NoImprovement{}
+
+func (n *NoImprovement) Call(rnd *rand.Rand, best, current State) bool {
+	if !n.isInitialized || best.Objective() < n.target {
+		n.isInitialized = true
+		n.target = best.Objective()
+		n.counter = 0
+	} else {
+		n.counter++
+	}
+	return n.counter >= n.MaxIterations
 }
