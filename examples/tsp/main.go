@@ -32,9 +32,19 @@ func main() {
 	}
 	a.AddRepairOperator(greedyRepair)
 
+	maxRuntime := 1 * time.Second
+
+	started := time.Now()
+	prevLoggedPercent := 0
 	a.Listener = func(outcome alns.Outcome, cand alns.State) {
 		if outcome == alns.Best {
 			// fmt.Printf("New best: %.4f\n", cand.Objective())
+		}
+		elapsed := time.Since(started)
+		percent := int(min(elapsed.Seconds()/maxRuntime.Seconds(), 1) * 10)
+		if percent > prevLoggedPercent {
+			prevLoggedPercent = percent
+			fmt.Printf("\rprogress: %3d%%", percent*10)
 		}
 	}
 
@@ -53,9 +63,10 @@ func main() {
 
 	sel := alns.NewRouletteWheel([4]float64{3, 2, 1, 0.5}, 0.8, len(a.DestroyOperators), len(a.RepairOperators), nil)
 	accept := alns.HillClimbing{}
-	stop := alns.MaxRuntime{MaxRuntime: 1 * time.Second}
+	stop := alns.MaxRuntime{MaxRuntime: maxRuntime}
 	// stop := alns.MaxIterations{MaxIterations: 10}
 	result := a.Iterate(initSol, &sel, &accept, &stop)
+	fmt.Println("") // after progress make new line
 	fmt.Printf("best solution: %.4f\n", result.BestState.Objective())
 
 	fmt.Printf("statistics: IterationCount=%d; TotalRuntime=%s\n",
