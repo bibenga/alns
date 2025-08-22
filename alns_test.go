@@ -37,7 +37,7 @@ func TestAlns(t *testing.T) {
 	})
 
 	initialSolution := FakeState{objective: 1}
-	opSelect := NewRouletteWheel([4]float64{3, 2, 1, 0.5}, 0.8, 1, 1, nil)
+	opSelect, _ := NewRouletteWheel([4]float64{3, 2, 1, 0.5}, 0.8, 1, 1, nil)
 	accept := HillClimbing{}
 	stop := MaxIterations{MaxIterations: 10}
 	res := a.Iterate(&initialSolution, &opSelect, &accept, &stop)
@@ -73,7 +73,7 @@ func TestAlnsCollectObjectives(t *testing.T) {
 		a.AddDestroyOperator(func(state State, rnd *rand.Rand) State { return state })
 		a.AddRepairOperator(func(state State, rnd *rand.Rand) State { return state })
 		initialSolution := FakeState{objective: 1}
-		opSelect := NewRouletteWheel([4]float64{3, 2, 1, 0.5}, 0.8, 1, 1, nil)
+		opSelect, _ := NewRouletteWheel([4]float64{3, 2, 1, 0.5}, 0.8, 1, 1, nil)
 		accept := HillClimbing{}
 		stop := MaxIterations{MaxIterations: 10}
 		res := a.Iterate(&initialSolution, &opSelect, &accept, &stop)

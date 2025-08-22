@@ -28,7 +28,7 @@ func NewRouletteWheel(
 	numDestroy int,
 	numRepair int,
 	opCoupling [][]bool,
-) RouletteWheel {
+) (RouletteWheel, error) {
 	r := RouletteWheel{
 		scores:     scores,
 		decay:      decay,
@@ -44,39 +44,53 @@ func NewRouletteWheel(
 	for i := range numRepair {
 		r.rWeights[i] = 1
 	}
-	r.mustValid()
-	return r
+	if err := r.validate(); err != nil {
+		return RouletteWheel{}, err
+	}
+	return r, nil
 }
 
 func (r *RouletteWheel) mustValid() {
+	if err := r.validate(); err != nil {
+		panic(err)
+	}
+}
+
+func (r *RouletteWheel) validate() error {
 	if min(r.scores[0], r.scores[1], r.scores[2], r.scores[3]) < 0 {
-		panic("negative scores are not understood.")
+		return fmt.Errorf("negative scores are not understood")
 	}
 
 	if !(0 <= r.decay && r.decay <= 1) {
-		panic("decay outside [0, 1] not understood.")
+		return fmt.Errorf("decay outside [0, 1] not understood")
 	}
 
 	if r.opCoupling != nil {
+		if len(r.opCoupling) == 0 {
+			return fmt.Errorf("coupling matrix of shape (%d, %d), expected (%d, %d)",
+				0, 0, r.numDestroy, r.numRepair)
+		}
 		rows := len(r.opCoupling)
 		cols := len(r.opCoupling[0])
-		for r, row := range r.opCoupling {
+		for i, row := range r.opCoupling {
 			if len(row) != cols {
-				panic(fmt.Errorf("the number of columns in a row %d does not match the expected %d",
-					r, cols))
+				return fmt.Errorf("the number of columns in a row %d does not match the expected %d",
+					i, cols)
 			}
 		}
 		if rows != r.numDestroy || cols != r.numRepair {
-			panic(fmt.Errorf("coupling matrix of shape (%d, %d), expected (%d, %d)",
-				rows, cols, r.numDestroy, r.numRepair))
+			return fmt.Errorf("coupling matrix of shape (%d, %d), expected (%d, %d)",
+				rows, cols, r.numDestroy, r.numRepair)
 		}
 	}
+
+	return nil
 }
 
 func (r *RouletteWheel) Call(rnd *rand.Rand, best State, current State) (int, int) {
 	if r.opCoupling != nil {
 		dIdx := weightedRandomIndex(rnd, r.dWeights)
-		coupledRIdcs := r.flatBoolEqual(r.opCoupling[dIdx], true)
+		coupledRIdcs := r.flatTrue(r.opCoupling[dIdx])
 		rIdx := coupledRIdcs[weightedRandomIndex(rnd, r.extract(r.rWeights, coupledRIdcs))]
 		return dIdx, rIdx
 	} else {
@@ -94,10 +108,10 @@ func (r *RouletteWheel) Update(candidate State, deleteOpIndx int, repairOpIndx i
 	r.rWeights[repairOpIndx] += (1 - r.decay) * r.scores[outcome]
 }
 
-func (r *RouletteWheel) flatBoolEqual(s []bool, e bool) []int {
+func (r *RouletteWheel) flatTrue(s []bool) []int {
 	res := make([]int, 0, len(s))
 	for i, v := range s {
-		if v == e {
+		if v {
 			res = append(res, i)
 		}
 	}
@@ -105,9 +119,9 @@ func (r *RouletteWheel) flatBoolEqual(s []bool, e bool) []int {
 }
 
 func (r *RouletteWheel) extract(s []float64, indices []int) []float64 {
-	res := make([]float64, 0, len(indices))
+	res := make([]float64, len(indices))
 	for _, i := range indices {
-		res = append(res, s[i])
+		res[i] = s[i]
 	}
 	return res
 }
