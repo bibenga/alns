@@ -48,13 +48,9 @@ func NewRouletteWheel(
 	return r
 }
 
-func (r RouletteWheel) mustValid() {
-	// if slices.Min(r.scores) < 0 {
-	// 	panic("negative scores are not understood.")
-	// }
-
-	if len(r.scores) < 4 {
-		panic(fmt.Errorf("expected four scores, found %d", len(r.scores)))
+func (r *RouletteWheel) mustValid() {
+	if min(r.scores[0], r.scores[1], r.scores[2], r.scores[3]) < 0 {
+		panic("negative scores are not understood.")
 	}
 
 	if !(0 <= r.decay && r.decay <= 1) {
@@ -62,7 +58,18 @@ func (r RouletteWheel) mustValid() {
 	}
 
 	if r.opCoupling != nil {
-		panic("unimplemented")
+		rows := len(r.opCoupling)
+		cols := len(r.opCoupling[0])
+		for r, row := range r.opCoupling {
+			if len(row) != cols {
+				panic(fmt.Errorf("the number of columns in a row %d does not match the expected %d",
+					r, cols))
+			}
+		}
+		if rows != r.numDestroy || cols != r.numRepair {
+			panic(fmt.Errorf("coupling matrix of shape (%d, %d), expected (%d, %d)",
+				rows, cols, r.numDestroy, r.numRepair))
+		}
 	}
 }
 
