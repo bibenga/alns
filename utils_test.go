@@ -40,11 +40,7 @@ func TestWeightedRandomIndex(t *testing.T) {
 		}
 
 		// Let's check that the frequencies roughly match the weight fractions
-		sum := 0.0
-		for _, w := range weights {
-			sum += w
-		}
-
+		sum := sum(weights)
 		for i, w := range weights {
 			expected := (w / sum) * float64(total)
 			got := float64(counts[i])

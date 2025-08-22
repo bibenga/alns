@@ -82,6 +82,19 @@ func (r *RouletteWheel) validate() error {
 			return fmt.Errorf("coupling matrix of shape (%d, %d), expected (%d, %d)",
 				rows, cols, r.numDestroy, r.numRepair)
 		}
+
+		for i, row := range r.opCoupling {
+			isCoupled := false
+			for _, value := range row {
+				if value {
+					isCoupled = true
+					break
+				}
+			}
+			if !isCoupled {
+				return fmt.Errorf("destroy operator %d has no coupled repair operators", i)
+			}
+		}
 	}
 
 	return nil
@@ -120,7 +133,7 @@ func (r *RouletteWheel) flatTrue(s []bool) []int {
 
 func (r *RouletteWheel) extract(s []float64, indices []int) []float64 {
 	res := make([]float64, len(indices))
-	for _, i := range indices {
+	for i := range indices {
 		res[i] = s[i]
 	}
 	return res

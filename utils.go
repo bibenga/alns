@@ -9,6 +9,9 @@ import (
 const absTol = 1e-08
 
 func weightedRandomIndex(rnd *rand.Rand, weights []float64) int {
+	if len(weights) == 0 {
+		panic("invalid weights")
+	}
 	if len(weights) == 1 {
 		return 0
 	}
