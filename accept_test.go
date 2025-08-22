@@ -11,13 +11,13 @@ func TestHillClimbing(t *testing.T) {
 	curr := FakeState{objective: 2.1}
 	cand := FakeState{objective: 1.9}
 
-	accepted := accept.Call(nil, best, curr, cand)
+	accepted := accept.Accept(nil, best, curr, cand)
 	if !accepted {
 		t.Fatal("expected to be accepted")
 	}
 
 	cand = FakeState{objective: 2.9}
-	accepted = accept.Call(nil, best, curr, cand)
+	accepted = accept.Accept(nil, best, curr, cand)
 	if accepted {
 		t.Fatal("expected not to be accepted")
 	}

@@ -6,7 +6,7 @@ import (
 )
 
 type OperatorSelectionScheme interface {
-	Call(rnd *rand.Rand, best, current State) (int, int)
+	Select(rnd *rand.Rand, best, current State) (deleteOpIndx, repairOpIndx int)
 	Update(candidate State, deleteOpIndx, repairOpIndx int, outcome Outcome)
 }
 
@@ -48,12 +48,6 @@ func NewRouletteWheel(
 		return RouletteWheel{}, err
 	}
 	return r, nil
-}
-
-func (r *RouletteWheel) mustValid() {
-	if err := r.validate(); err != nil {
-		panic(err)
-	}
 }
 
 func (r *RouletteWheel) validate() error {
@@ -100,7 +94,7 @@ func (r *RouletteWheel) validate() error {
 	return nil
 }
 
-func (r *RouletteWheel) Call(rnd *rand.Rand, best State, current State) (int, int) {
+func (r *RouletteWheel) Select(rnd *rand.Rand, best State, current State) (int, int) {
 	if r.opCoupling != nil {
 		dIdx := weightedRandomIndex(rnd, r.dWeights)
 		coupledRIdcs := r.flatTrue(r.opCoupling[dIdx])

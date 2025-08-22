@@ -11,7 +11,7 @@ func TestMaxIterations(t *testing.T) {
 	stop := MaxIterations{MaxIterations: 10}
 
 	i := 0
-	for !stop.Call(nil, nil, nil) {
+	for !stop.IsDone(nil, nil, nil) {
 		i++
 	}
 
@@ -27,7 +27,7 @@ func TestMaxRuntime(t *testing.T) {
 	stop := MaxRuntime{MaxRuntime: 100 * time.Millisecond}
 
 	started := time.Now()
-	for !stop.Call(nil, nil, nil) {
+	for !stop.IsDone(nil, nil, nil) {
 		time.Sleep(1 * time.Millisecond)
 	}
 	elapsed := time.Since(started).Milliseconds()
@@ -42,7 +42,7 @@ func TestNoImprovement(t *testing.T) {
 		best := FakeState{objective: 1}
 		curr := FakeState{objective: 1}
 		i := 0
-		for !stop.Call(nil, best, curr) {
+		for !stop.IsDone(nil, best, curr) {
 			i++
 		}
 		if i != 10 {
@@ -58,7 +58,7 @@ func TestNoImprovement(t *testing.T) {
 		best := FakeState{objective: 100}
 		curr := FakeState{objective: 100}
 		i := 0
-		for !stop.Call(nil, best, curr) {
+		for !stop.IsDone(nil, best, curr) {
 			best.objective = max(math.Round(curr.objective-1), 0)
 			curr.objective = max(math.Round(curr.objective-1), 0)
 			i++
@@ -79,7 +79,7 @@ func TestStoppingCriterions(t *testing.T) {
 	}
 
 	i := 0
-	for !stop.Call(nil, nil, nil) {
+	for !stop.IsDone(nil, nil, nil) {
 		i++
 	}
 
@@ -95,7 +95,7 @@ func TestContext(t *testing.T) {
 	stop := Context{Context: ctx}
 
 	started := time.Now()
-	for !stop.Call(nil, nil, nil) {
+	for !stop.IsDone(nil, nil, nil) {
 		time.Sleep(1 * time.Millisecond)
 	}
 	elapsed := time.Since(started).Milliseconds()

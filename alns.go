@@ -38,7 +38,7 @@ func (a *ALNS) AddRepairOperator(op Operator) {
 
 func (a *ALNS) Iterate(
 	initialSolution State,
-	opSelect OperatorSelectionScheme,
+	selector OperatorSelectionScheme,
 	accept AcceptanceCriterion,
 	stop StoppingCriterion,
 ) Result {
@@ -63,8 +63,8 @@ func (a *ALNS) Iterate(
 		stats.collectObjective(0, initialSolution.Objective())
 	}
 
-	for !stop.Call(a.Rnd, best, curr) {
-		dIdx, rIdx := opSelect.Call(a.Rnd, best, curr)
+	for !stop.IsDone(a.Rnd, best, curr) {
+		dIdx, rIdx := selector.Select(a.Rnd, best, curr)
 		destroyOp := a.DestroyOperators[dIdx]
 		repairOp := a.RepairOperators[rIdx]
 
@@ -74,7 +74,7 @@ func (a *ALNS) Iterate(
 		var outcome Outcome
 		best, curr, outcome = a.evalCand(accept, best, curr, cand)
 
-		opSelect.Update(cand, dIdx, rIdx, outcome)
+		selector.Update(cand, dIdx, rIdx, outcome)
 
 		stats.IterationCount++
 		if a.CollectObjectives {
@@ -107,7 +107,7 @@ func (a *ALNS) evalCand(accept AcceptanceCriterion, best, curr, cand State) (Sta
 func (a *ALNS) determineOutcome(accept AcceptanceCriterion, best, curr, cand State) Outcome {
 	outcome := Reject
 
-	if accept.Call(a.Rnd, best, curr, cand) {
+	if accept.Accept(a.Rnd, best, curr, cand) {
 		// accept candidate
 		outcome = Accept
 
