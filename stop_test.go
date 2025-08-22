@@ -70,3 +70,19 @@ func TestNoImprovement(t *testing.T) {
 		}
 	})
 }
+
+func TestStoppingCriterions(t *testing.T) {
+	stop := StoppingCriterions{
+		&MaxIterations{MaxIterations: 10},
+		&MaxIterations{MaxIterations: 20},
+	}
+
+	i := 0
+	for !stop.Call(nil, nil, nil) {
+		i++
+	}
+
+	if i != 10 {
+		t.Fatalf("10 iterations expected, actual %d iterations", i)
+	}
+}

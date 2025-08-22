@@ -16,9 +16,9 @@ type MaxIterations struct {
 
 var _ StoppingCriterion = &MaxIterations{}
 
-func (s *MaxIterations) Call(rnd *rand.Rand, best, current State) bool {
-	s.currentIteration++
-	return s.currentIteration > s.MaxIterations
+func (mi *MaxIterations) Call(rnd *rand.Rand, best, current State) bool {
+	mi.currentIteration++
+	return mi.currentIteration > mi.MaxIterations
 }
 
 type MaxRuntime struct {
@@ -28,12 +28,12 @@ type MaxRuntime struct {
 
 var _ StoppingCriterion = &MaxRuntime{}
 
-func (s *MaxRuntime) Call(rnd *rand.Rand, best, current State) bool {
-	if s.started.IsZero() {
-		s.started = time.Now()
+func (mr *MaxRuntime) Call(rnd *rand.Rand, best, current State) bool {
+	if mr.started.IsZero() {
+		mr.started = time.Now()
 		return false
 	}
-	return time.Since(s.started) > s.MaxRuntime
+	return time.Since(mr.started) > mr.MaxRuntime
 }
 
 type NoImprovement struct {
@@ -45,13 +45,29 @@ type NoImprovement struct {
 
 var _ StoppingCriterion = &NoImprovement{}
 
-func (n *NoImprovement) Call(rnd *rand.Rand, best, current State) bool {
-	if !n.isInitialized || best.Objective() < n.target {
-		n.isInitialized = true
-		n.target = best.Objective()
-		n.counter = 0
+func (ni *NoImprovement) Call(rnd *rand.Rand, best, current State) bool {
+	if !ni.isInitialized || best.Objective() < ni.target {
+		ni.isInitialized = true
+		ni.target = best.Objective()
+		ni.counter = 0
 	} else {
-		n.counter++
+		ni.counter++
 	}
-	return n.counter >= n.MaxIterations
+	return ni.counter >= ni.MaxIterations
+}
+
+type StoppingCriterions []StoppingCriterion
+
+var _ StoppingCriterion = StoppingCriterions{}
+
+func (sc StoppingCriterions) Call(rnd *rand.Rand, best, current State) bool {
+	if len(sc) == 0 {
+		panic("no criteria were specified")
+	}
+	for _, c := range sc {
+		if c.Call(rnd, best, current) {
+			return true
+		}
+	}
+	return false
 }
