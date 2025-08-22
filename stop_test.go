@@ -1,6 +1,7 @@
 package alns
 
 import (
+	"context"
 	"math"
 	"testing"
 	"time"
@@ -84,5 +85,21 @@ func TestStoppingCriterions(t *testing.T) {
 
 	if i != 10 {
 		t.Fatalf("10 iterations expected, actual %d iterations", i)
+	}
+}
+
+func TestContext(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+
+	stop := Context{Context: ctx}
+
+	started := time.Now()
+	for !stop.Call(nil, nil, nil) {
+		time.Sleep(1 * time.Millisecond)
+	}
+	elapsed := time.Since(started).Milliseconds()
+	if !(100 <= elapsed && elapsed <= 105) {
+		t.Fatalf("expected duration 100ms, actual %d", elapsed)
 	}
 }

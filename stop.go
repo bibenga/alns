@@ -1,6 +1,7 @@
 package alns
 
 import (
+	"context"
 	"math/rand/v2"
 	"time"
 )
@@ -70,4 +71,19 @@ func (sc StoppingCriterions) Call(rnd *rand.Rand, best, current State) bool {
 		}
 	}
 	return false
+}
+
+type Context struct {
+	Context context.Context
+}
+
+var _ StoppingCriterion = &Context{}
+
+func (c *Context) Call(rnd *rand.Rand, best, current State) bool {
+	select {
+	case <-c.Context.Done():
+		return true
+	default:
+		return false
+	}
 }
