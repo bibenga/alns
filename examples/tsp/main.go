@@ -14,6 +14,7 @@ import (
 
 func main() {
 	// https://alns.readthedocs.io/en/latest/examples/travelling_salesman_problem.html
+	// go run examples/tsp/main.go && neato -Tpng examples/tsp/tsp.dot -o examples/tsp/tsp.png
 
 	a := alns.NewDefault()
 
@@ -93,8 +94,6 @@ func main() {
 
 	best := result.BestState.(*TspState)
 	writeDotFile("examples/tsp/tsp.dot", COORDS, best.edges)
-	// install graphviz and:
-	// neato -Tpng examples/tsp/tsp.dot -o examples/tsp/tsp.png
 }
 
 var COORDS = [][2]float64{
