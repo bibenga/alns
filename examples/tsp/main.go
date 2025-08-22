@@ -36,9 +36,9 @@ func main() {
 
 	maxRuntime := 1 * time.Second
 
-	dists := dists(COORDS)
-	nodes := make([]int, len(COORDS))
-	for i := range len(COORDS) {
+	dists := dists(Coords)
+	nodes := make([]int, len(Coords))
+	for i := range len(Coords) {
 		nodes[i] = i
 	}
 
@@ -93,10 +93,10 @@ func main() {
 	}
 
 	best := result.BestState.(*TspState)
-	writeDotFile("examples/tsp/tsp.dot", COORDS, best.edges)
+	writeDotFile("examples/tsp/tsp.dot", Coords, best.edges)
 }
 
-var COORDS = [][2]float64{
+var Coords = [][2]float64{
 	{0, 13},
 	{0, 26},
 	{0, 27},
@@ -230,10 +230,6 @@ var COORDS = [][2]float64{
 	{107, 27},
 }
 
-func euclidean(x1, y1, x2, y2 float64) float64 {
-	return math.Sqrt(math.Pow(x2-x1, 2) + math.Pow(y2-y1, 2))
-}
-
 func dists(coords [][2]float64) [][]float64 {
 	dist := make([][]float64, len(coords))
 	for row, coord1 := range coords {
@@ -243,6 +239,10 @@ func dists(coords [][2]float64) [][]float64 {
 		}
 	}
 	return dist
+}
+
+func euclidean(x1, y1, x2, y2 float64) float64 {
+	return math.Sqrt(math.Pow(x2-x1, 2) + math.Pow(y2-y1, 2))
 }
 
 type TspState struct {
@@ -297,7 +297,7 @@ func greedyRepair(state alns.State, rnd *rand.Rand) alns.State {
 			}
 		}
 		if node == -1 {
-			panic(-1)
+			panic(fmt.Errorf("node not found"))
 		}
 
 		var unvisited []int
@@ -307,7 +307,7 @@ func greedyRepair(state alns.State, rnd *rand.Rand) alns.State {
 			}
 		}
 		if len(unvisited) == 0 {
-			panic("len(unvisited) == 0")
+			panic(fmt.Errorf("unvisited is empty"))
 		}
 
 		nearest := slices.MinFunc(unvisited, func(a, b int) int {
