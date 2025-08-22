@@ -402,12 +402,14 @@ func writeDotFile(filename string, nodes [][2]float64, edges map[int]int) {
 	}
 	defer f.Close()
 
+	// scale up
 	const k = 3
 	nodes = slices.Clone(nodes)
 	for n := range nodes {
 		nodes[n] = [2]float64{nodes[n][0] * k, nodes[n][1] * k}
 	}
 
+	// search min and max
 	minX, minY := nodes[0][0], nodes[0][1]
 	maxX, maxY := minX, minY
 	for _, n := range nodes {
