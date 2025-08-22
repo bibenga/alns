@@ -396,12 +396,6 @@ func worstRemoval(state alns.State, rnd *rand.Rand) alns.State {
 }
 
 func writeDotFile(filename string, nodes [][2]float64, edges map[int]int) {
-	f, err := os.Create(filename)
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-
 	// scale up
 	const k = 3
 	nodes = slices.Clone(nodes)
@@ -434,6 +428,13 @@ func writeDotFile(filename string, nodes [][2]float64, edges map[int]int) {
 	if height == 0 {
 		panic(fmt.Errorf("zero height"))
 	}
+
+	// create and write dot file
+	f, err := os.Create(filename)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
 
 	fmt.Fprintln(f, "digraph G {")
 	fmt.Fprintf(f, "  graph [size=\"%f,%f!\", dpi=20.0];\n", width, height)
