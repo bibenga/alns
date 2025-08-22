@@ -7,6 +7,7 @@ import (
 	"maps"
 	"math"
 	"math/rand/v2"
+	"os"
 	"slices"
 	"time"
 )
@@ -32,7 +33,7 @@ func main() {
 	}
 	a.AddRepairOperator(greedyRepair)
 
-	maxRuntime := 5 * time.Second
+	maxRuntime := 1 * time.Second
 
 	dists := dists(COORDS)
 	nodes := make([]int, len(COORDS))
@@ -89,6 +90,11 @@ func main() {
 	for i, r := range result.Statistics.Objectives {
 		fmt.Printf("%4d: %12s - %.4f\n", i, r.Elapsed, r.Objective)
 	}
+
+	best := result.BestState.(*TspState)
+	writeDotFile("examples/tsp/tsp.dot", COORDS, best.edges)
+	// install graphviz and:
+	// neato -Tpng examples/tsp/tsp.dot -o examples/tsp/tsp.png
 }
 
 var COORDS = [][2]float64{
@@ -387,4 +393,59 @@ func worstRemoval(state alns.State, rnd *rand.Rand) alns.State {
 	}
 
 	return destroyed
+}
+
+func writeDotFile(filename string, nodes [][2]float64, edges map[int]int) {
+	f, err := os.Create(filename)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	minX, minY := nodes[0][0], nodes[0][1]
+	maxX, maxY := minX, minY
+	for _, n := range nodes {
+		if n[0] < minX {
+			minX = n[0]
+		}
+		if n[1] < minY {
+			minY = n[1]
+		}
+		if n[0] > maxX {
+			maxX = n[0]
+		}
+		if n[1] > maxY {
+			maxY = n[1]
+		}
+	}
+	width := maxX - minX
+	if width == 0 {
+		panic(fmt.Errorf("zero width"))
+	}
+	height := maxY - minY
+	if height == 0 {
+		panic(fmt.Errorf("zero height"))
+	}
+
+	fmt.Fprintln(f, "digraph G {")
+	fmt.Fprintf(f, "  graph [size=\"%f,%f!\", dpi=20.0];\n", width, height)
+
+	fontsize := 48
+	nodeSize := 2
+	for i, n := range nodes {
+		x := (n[0] - minX)
+		y := (n[1] - minY)
+		// fmt.Fprintf(f, "  %d [label=\"%d\", pos=\"%f,%f!\"];\n", i, i, x, y)
+		fmt.Fprintf(f,
+			"  %d [label=\"%d\", fontsize=%d, pos=\"%f,%f!\", shape=circle, width=%d, height=%d, fixedsize=true];\n",
+			i, i, fontsize, x, y, nodeSize, nodeSize)
+	}
+
+	arrowsize := 4
+	penwidth := 3
+	for from, to := range edges {
+		fmt.Fprintf(f, "  %d -> %d [arrowsize=%d, penwidth=%d];\n", from, to, arrowsize, penwidth)
+	}
+
+	fmt.Fprintln(f, "}")
 }
