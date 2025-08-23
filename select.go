@@ -11,13 +11,15 @@ type OperatorSelectionScheme[O any] interface {
 }
 
 type RouletteWheel[O any] struct {
-	scores     [4]float64
-	decay      float64
-	numDestroy int
-	numRepair  int
-	opCoupling [][]bool
-	dWeights   []float64
-	rWeights   []float64
+	scores          [4]float64
+	decay           float64
+	numDestroy      int
+	numRepair       int
+	opCoupling      [][]bool
+	dWeights        []float64
+	rWeights        []float64
+	coupledRIdcs    []int     // used in Select for caching
+	coupledRWeights []float64 // used in Select for caching
 }
 
 var _ OperatorSelectionScheme[int] = &RouletteWheel[int]{}
@@ -30,13 +32,15 @@ func NewRouletteWheel[O any](
 	opCoupling [][]bool,
 ) (RouletteWheel[O], error) {
 	r := RouletteWheel[O]{
-		scores:     scores,
-		decay:      decay,
-		numDestroy: numDestroy,
-		numRepair:  numRepair,
-		opCoupling: opCoupling,
-		dWeights:   make([]float64, numDestroy),
-		rWeights:   make([]float64, numRepair),
+		scores:          scores,
+		decay:           decay,
+		numDestroy:      numDestroy,
+		numRepair:       numRepair,
+		opCoupling:      opCoupling,
+		dWeights:        make([]float64, numDestroy),
+		rWeights:        make([]float64, numRepair),
+		coupledRIdcs:    make([]int, 0, numRepair),
+		coupledRWeights: make([]float64, 0, numRepair),
 	}
 	for i := range numDestroy {
 		r.dWeights[i] = 1
@@ -96,9 +100,22 @@ func (r *RouletteWheel[O]) validate() error {
 
 func (r *RouletteWheel[O]) Select(rnd *rand.Rand, best State[O], current State[O]) (int, int) {
 	if r.opCoupling != nil {
+		// select destroy operator
 		dIdx := weightedRandomIndex(rnd, r.dWeights)
-		coupledRIdcs := r.flatTrue(r.opCoupling[dIdx])
-		rIdx := coupledRIdcs[weightedRandomIndex(rnd, r.extract(r.rWeights, coupledRIdcs))]
+
+		// extract coupled repair indeces and their weight for selected destroy operator
+		r.coupledRIdcs = r.coupledRIdcs[:0]
+		r.coupledRWeights = r.coupledRWeights[:0]
+		for i, v := range r.opCoupling[dIdx] {
+			if v {
+				r.coupledRIdcs = append(r.coupledRIdcs, i)
+				r.coupledRWeights = append(r.coupledRWeights, r.rWeights[i])
+			}
+		}
+
+		// select repair operator
+		rIdx := r.coupledRIdcs[weightedRandomIndex(rnd, r.coupledRWeights)]
+
 		return dIdx, rIdx
 	} else {
 		dIdx := weightedRandomIndex(rnd, r.dWeights)
@@ -113,22 +130,4 @@ func (r *RouletteWheel[O]) Update(candidate State[O], deleteOpIndx int, repairOp
 
 	r.rWeights[repairOpIndx] *= r.decay
 	r.rWeights[repairOpIndx] += (1 - r.decay) * r.scores[outcome]
-}
-
-func (r *RouletteWheel[O]) flatTrue(s []bool) []int {
-	res := make([]int, 0, len(s))
-	for i, v := range s {
-		if v {
-			res = append(res, i)
-		}
-	}
-	return res
-}
-
-func (r *RouletteWheel[O]) extract(s []float64, indices []int) []float64 {
-	res := make([]float64, len(indices))
-	for i := range indices {
-		res[i] = s[i]
-	}
-	return res
 }

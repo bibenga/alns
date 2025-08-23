@@ -113,8 +113,6 @@ func TestRouletteWheel(t *testing.T) {
 			dCounter[dIdx]++
 			rCounter[rIdx]++
 		}
-		t.Log(dCounter)
-		t.Log(rCounter)
 
 		// fifty-fifty
 		expectedDestoryPercent := []float64{0.5, 0.5}
