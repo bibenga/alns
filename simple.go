@@ -1,6 +1,6 @@
 package alns
 
-func SimpleIterate(
+func Iterate(
 	initial State,
 	destroyOperators []Operator,
 	repairOperators []Operator,

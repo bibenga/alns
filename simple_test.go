@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestSimpleIterate(t *testing.T) {
+func TestIterate(t *testing.T) {
 	lastBest := rand.Float64()
 	initialSolution := FakeState{objective: lastBest}
 
@@ -37,7 +37,7 @@ func TestSimpleIterate(t *testing.T) {
 
 	const total = 100
 
-	res, err := SimpleIterate(
+	res, err := Iterate(
 		&initialSolution,
 		destroyOperators,
 		repairOperators,
