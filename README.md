@@ -1,6 +1,7 @@
-# ALNS in Go (Partial Implementation)
+# ALNS in Go 
 
-This is a **partial port/adaptation** of the Python library **ALNS** (Adaptive Large Neighbourhood Search) to the **Go** programming language.  
+This is a **partial port/adaptation** of the Python library [N-Wouda/ALNS](https://github.com/N-Wouda/ALNS) to the **Go** programming language.  
+
 The original implementation can be found here: [N-Wouda/ALNS](https://github.com/N-Wouda/ALNS).
 
 ## Overview
