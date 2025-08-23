@@ -8,7 +8,7 @@ import (
 
 type Comparator[O any] func(a, b O) int
 
-type Listener[O any] func(outcome Outcome, cand State[O])
+type Listener[O any] func(outcome Outcome, cand State[O]) error
 
 type ALNS[O any] struct {
 	Rnd               *rand.Rand
@@ -40,7 +40,7 @@ func (a *ALNS[O]) Iterate(
 	selector OperatorSelectionScheme[O],
 	accept AcceptanceCriterion[O],
 	stop StoppingCriterion[O],
-) Result[O] {
+) (*Result[O], error) {
 	if len(a.DestroyOperators) == 0 || len(a.RepairOperators) == 0 {
 		panic("Missing destroy or repair operators.")
 	}
@@ -62,18 +62,38 @@ func (a *ALNS[O]) Iterate(
 		stats.collectObjective(0, initialSolution.Objective())
 	}
 
-	for !stop.IsDone(a.Rnd, best, curr) {
-		dIdx, rIdx := selector.Select(a.Rnd, best, curr)
+	for {
+		if done, err := stop.IsDone(a.Rnd, best, curr); err != nil {
+			return nil, err
+		} else if done {
+			break
+		}
+		dIdx, rIdx, err := selector.Select(a.Rnd, best, curr)
+		if err != nil {
+			return nil, err
+		}
 		destroyOp := a.DestroyOperators[dIdx]
 		repairOp := a.RepairOperators[rIdx]
 
-		destroyed := destroyOp(curr, a.Rnd)
-		cand := repairOp(destroyed, a.Rnd)
+		destroyed, err := destroyOp(curr, a.Rnd)
+		if err != nil {
+			return nil, err
+		}
+		cand, err := repairOp(destroyed, a.Rnd)
+		if err != nil {
+			return nil, err
+		}
 
 		var outcome Outcome
-		best, curr, outcome = a.evalCand(accept, best, curr, cand)
+		best, curr, outcome, err = a.evalCand(accept, best, curr, cand)
+		if err != nil {
+			return nil, err
+		}
 
-		selector.Update(cand, dIdx, rIdx, outcome)
+		err = selector.Update(cand, dIdx, rIdx, outcome)
+		if err != nil {
+			return nil, err
+		}
 
 		stats.IterationCount++
 		if a.CollectObjectives {
@@ -83,30 +103,38 @@ func (a *ALNS[O]) Iterate(
 	}
 	stats.TotalRuntime = time.Since(started)
 
-	return Result[O]{BestState: best, Statistics: stats}
+	result := Result[O]{BestState: best, Statistics: stats}
+	return &result, nil
 }
 
-func (a *ALNS[O]) evalCand(accept AcceptanceCriterion[O], best, curr, cand State[O]) (State[O], State[O], Outcome) {
-	outcome := a.determineOutcome(accept, best, curr, cand)
+func (a *ALNS[O]) evalCand(accept AcceptanceCriterion[O], best, curr, cand State[O]) (State[O], State[O], Outcome, error) {
+	outcome, err := a.determineOutcome(accept, best, curr, cand)
+	if err != nil {
+		return nil, nil, 0, err
+	}
 
 	if a.Listener != nil {
-		a.Listener(outcome, cand)
+		if err := a.Listener(outcome, cand); err != nil {
+			return nil, nil, 0, err
+		}
 	}
 
 	switch outcome {
 	case Best:
-		return cand, cand, outcome
+		return cand, cand, outcome, nil
 	case Reject:
-		return best, curr, outcome
+		return best, curr, outcome, nil
 	default:
-		return best, cand, outcome
+		return best, cand, outcome, nil
 	}
 }
 
-func (a *ALNS[O]) determineOutcome(accept AcceptanceCriterion[O], best, curr, cand State[O]) Outcome {
+func (a *ALNS[O]) determineOutcome(accept AcceptanceCriterion[O], best, curr, cand State[O]) (Outcome, error) {
 	outcome := Reject
 
-	if accept.Accept(a.Rnd, best, curr, cand) {
+	if accepted, err := accept.Accept(a.Rnd, best, curr, cand); err != nil {
+		return 0, err
+	} else if accepted {
 		// accept candidate
 		outcome = Accept
 
@@ -120,5 +148,5 @@ func (a *ALNS[O]) determineOutcome(accept AcceptanceCriterion[O], best, curr, ca
 		outcome = Best
 	}
 
-	return outcome
+	return outcome, nil
 }

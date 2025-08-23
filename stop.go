@@ -8,7 +8,7 @@ import (
 )
 
 type StoppingCriterion[O any] interface {
-	IsDone(rnd *rand.Rand, best, current State[O]) bool
+	IsDone(rnd *rand.Rand, best, current State[O]) (bool, error)
 }
 
 type MaxIterations[O any] struct {
@@ -18,9 +18,9 @@ type MaxIterations[O any] struct {
 
 var _ StoppingCriterion[int] = &MaxIterations[int]{}
 
-func (mi *MaxIterations[O]) IsDone(rnd *rand.Rand, best, current State[O]) bool {
+func (mi *MaxIterations[O]) IsDone(rnd *rand.Rand, best, current State[O]) (bool, error) {
 	mi.currentIteration++
-	return mi.currentIteration > mi.MaxIterations
+	return mi.currentIteration > mi.MaxIterations, nil
 }
 
 type MaxRuntime[O any] struct {
@@ -30,12 +30,12 @@ type MaxRuntime[O any] struct {
 
 var _ StoppingCriterion[int] = &MaxRuntime[int]{}
 
-func (mr *MaxRuntime[O]) IsDone(rnd *rand.Rand, best, current State[O]) bool {
+func (mr *MaxRuntime[O]) IsDone(rnd *rand.Rand, best, current State[O]) (bool, error) {
 	if mr.started.IsZero() {
 		mr.started = time.Now()
-		return false
+		return false, nil
 	}
-	return time.Since(mr.started) > mr.MaxRuntime
+	return time.Since(mr.started) > mr.MaxRuntime, nil
 }
 
 type NoImprovement[O any] struct {
@@ -55,7 +55,7 @@ func NewNoImprovement[O cmp.Ordered](maxIterations int) NoImprovement[O] {
 	}
 }
 
-func (ni *NoImprovement[O]) IsDone(rnd *rand.Rand, best, current State[O]) bool {
+func (ni *NoImprovement[O]) IsDone(rnd *rand.Rand, best, current State[O]) (bool, error) {
 	if !ni.isInitialized || ni.Compare(best.Objective(), ni.target) < 0 {
 		ni.isInitialized = true
 		ni.target = best.Objective()
@@ -63,23 +63,25 @@ func (ni *NoImprovement[O]) IsDone(rnd *rand.Rand, best, current State[O]) bool 
 	} else {
 		ni.counter++
 	}
-	return ni.counter >= ni.MaxIterations
+	return ni.counter >= ni.MaxIterations, nil
 }
 
 type StoppingCriterions[O any] []StoppingCriterion[O]
 
 var _ StoppingCriterion[int] = StoppingCriterions[int]{}
 
-func (sc StoppingCriterions[O]) IsDone(rnd *rand.Rand, best, current State[O]) bool {
+func (sc StoppingCriterions[O]) IsDone(rnd *rand.Rand, best, current State[O]) (bool, error) {
 	if len(sc) == 0 {
 		panic("no criterias were specified")
 	}
 	for _, c := range sc {
-		if c.IsDone(rnd, best, current) {
-			return true
+		if done, err := c.IsDone(rnd, best, current); err != nil {
+			return true, err
+		} else if done {
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }
 
 type Context[O any] struct {
@@ -88,11 +90,11 @@ type Context[O any] struct {
 
 var _ StoppingCriterion[int] = &Context[int]{}
 
-func (c *Context[O]) IsDone(rnd *rand.Rand, best, current State[O]) bool {
+func (c *Context[O]) IsDone(rnd *rand.Rand, best, current State[O]) (bool, error) {
 	select {
 	case <-c.Context.Done():
-		return true
+		return true, nil
 	default:
-		return false
+		return false, nil
 	}
 }
