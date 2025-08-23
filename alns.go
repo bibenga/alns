@@ -6,41 +6,37 @@ import (
 	"time"
 )
 
-type Comparator[O any] func(a, b O) int
+type Listener func(outcome Outcome, cand State) error
 
-type Listener[O any] func(outcome Outcome, cand State[O]) error
-
-type ALNS[O any] struct {
+type ALNS struct {
 	Rnd               *rand.Rand
-	Compare           Comparator[O]
 	CollectObjectives bool
-	Listener          Listener[O]
-	DestroyOperators  []Operator[O]
-	RepairOperators   []Operator[O]
-	Selector          OperatorSelectionScheme[O]
-	Acceptor          AcceptanceCriterion[O]
-	Stop              StoppingCriterion[O]
-	InitialSolution   State[O]
-	Result            Result[O]
+	Listener          Listener
+	DestroyOperators  []Operator
+	RepairOperators   []Operator
+	Selector          OperatorSelectionScheme
+	Acceptor          AcceptanceCriterion
+	Stop              StoppingCriterion
+	InitialSolution   State
+	Result            Result
 }
 
-func NewOrdered[O cmp.Ordered]() ALNS[O] {
-	return ALNS[O]{
+func NewOrdered[O cmp.Ordered]() ALNS {
+	return ALNS{
 		Rnd:               RuntimeRand,
-		Compare:           cmp.Compare[O],
 		CollectObjectives: true,
 	}
 }
 
-func (a *ALNS[O]) AddDestroyOperator(ops ...Operator[O]) {
+func (a *ALNS) AddDestroyOperator(ops ...Operator) {
 	a.DestroyOperators = append(a.DestroyOperators, ops...)
 }
 
-func (a *ALNS[O]) AddRepairOperator(ops ...Operator[O]) {
+func (a *ALNS) AddRepairOperator(ops ...Operator) {
 	a.RepairOperators = append(a.RepairOperators, ops...)
 }
 
-func (a *ALNS[O]) Iterate() (*Result[O], error) {
+func (a *ALNS) Iterate() (*Result, error) {
 	if len(a.DestroyOperators) == 0 || len(a.RepairOperators) == 0 {
 		panic("Missing destroy or repair operators.")
 	}
@@ -50,11 +46,11 @@ func (a *ALNS[O]) Iterate() (*Result[O], error) {
 
 	numIterations := 0
 	if a.CollectObjectives {
-		if maxIterations, ok := a.Stop.(*MaxIterations[O]); ok {
+		if maxIterations, ok := a.Stop.(*MaxIterations); ok {
 			numIterations = maxIterations.MaxIterations + 1
 		}
 	}
-	stats := newStatistics[O](numIterations, len(a.DestroyOperators), len(a.RepairOperators))
+	stats := newStatistics(numIterations, len(a.DestroyOperators), len(a.RepairOperators))
 
 	started := time.Now()
 	if a.CollectObjectives {
@@ -102,7 +98,7 @@ func (a *ALNS[O]) Iterate() (*Result[O], error) {
 	}
 	stats.TotalRuntime = time.Since(started)
 
-	a.Result = Result[O]{
+	a.Result = Result{
 		BestState:  best,
 		Statistics: stats,
 	}
@@ -110,7 +106,7 @@ func (a *ALNS[O]) Iterate() (*Result[O], error) {
 	return &a.Result, nil
 }
 
-func (a *ALNS[O]) evalCand(best, curr, cand State[O]) (State[O], State[O], Outcome, error) {
+func (a *ALNS) evalCand(best, curr, cand State) (State, State, Outcome, error) {
 	outcome, err := a.determineOutcome(best, curr, cand)
 	if err != nil {
 		return nil, nil, 0, err
@@ -132,7 +128,7 @@ func (a *ALNS[O]) evalCand(best, curr, cand State[O]) (State[O], State[O], Outco
 	}
 }
 
-func (a *ALNS[O]) determineOutcome(best, curr, cand State[O]) (Outcome, error) {
+func (a *ALNS) determineOutcome(best, curr, cand State) (Outcome, error) {
 	outcome := Reject
 
 	if accepted, err := a.Acceptor.Accept(a.Rnd, best, curr, cand); err != nil {
@@ -141,12 +137,12 @@ func (a *ALNS[O]) determineOutcome(best, curr, cand State[O]) (Outcome, error) {
 		// accept candidate
 		outcome = Accept
 
-		if a.Compare(cand.Objective(), curr.Objective()) < 0 {
+		if cand.Objective() < curr.Objective() {
 			outcome = Better
 		}
 	}
 
-	if a.Compare(cand.Objective(), best.Objective()) < 0 {
+	if cand.Objective() < best.Objective() {
 		// candidate is new best
 		outcome = Best
 	}

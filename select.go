@@ -5,13 +5,13 @@ import (
 	"math/rand/v2"
 )
 
-type OperatorSelectionScheme[O any] interface {
-	Select(rnd *rand.Rand, best, current State[O]) (deleteOpIndx, repairOpIndx int, err error)
-	Update(candidate State[O], deleteOpIndx, repairOpIndx int, outcome Outcome) error
+type OperatorSelectionScheme interface {
+	Select(rnd *rand.Rand, best, current State) (deleteOpIndx, repairOpIndx int, err error)
+	Update(candidate State, deleteOpIndx, repairOpIndx int, outcome Outcome) error
 }
 
 // The `RouletteWheel` scheme updates operator weights as a convex combination of the current weight, and the new score.
-type RouletteWheel[O any] struct {
+type RouletteWheel struct {
 	scores          [4]float64 // representing the weight updates when the candidate solution results in a new global
 	decay           float64    // operator decay parameter :math:`\theta \in [0, 1]`
 	numDestroy      int        // number of destroy operators
@@ -23,16 +23,16 @@ type RouletteWheel[O any] struct {
 	coupledRWeights []float64  // used in Select for caching
 }
 
-var _ OperatorSelectionScheme[int] = &RouletteWheel[int]{}
+var _ OperatorSelectionScheme = &RouletteWheel{}
 
-func NewRouletteWheel[O any](
+func NewRouletteWheel(
 	scores [4]float64,
 	decay float64,
 	numDestroy int,
 	numRepair int,
 	opCoupling [][]bool,
-) (RouletteWheel[O], error) {
-	r := RouletteWheel[O]{
+) (RouletteWheel, error) {
+	r := RouletteWheel{
 		scores:          scores,
 		decay:           decay,
 		numDestroy:      numDestroy,
@@ -50,12 +50,12 @@ func NewRouletteWheel[O any](
 		r.rWeights[i] = 1
 	}
 	if err := r.validate(); err != nil {
-		return RouletteWheel[O]{}, err
+		return RouletteWheel{}, err
 	}
 	return r, nil
 }
 
-func (r *RouletteWheel[O]) validate() error {
+func (r *RouletteWheel) validate() error {
 	if min(r.scores[0], r.scores[1], r.scores[2], r.scores[3]) < 0 {
 		return fmt.Errorf("negative scores are not understood")
 	}
@@ -99,7 +99,7 @@ func (r *RouletteWheel[O]) validate() error {
 	return nil
 }
 
-func (r *RouletteWheel[O]) Select(rnd *rand.Rand, best State[O], current State[O]) (int, int, error) {
+func (r *RouletteWheel) Select(rnd *rand.Rand, best State, current State) (int, int, error) {
 	if r.opCoupling != nil {
 		// select destroy operator
 		dIdx := weightedRandomIndex(rnd, r.dWeights)
@@ -125,7 +125,7 @@ func (r *RouletteWheel[O]) Select(rnd *rand.Rand, best State[O], current State[O
 	}
 }
 
-func (r *RouletteWheel[O]) Update(candidate State[O], deleteOpIndx int, repairOpIndx int, outcome Outcome) error {
+func (r *RouletteWheel) Update(candidate State, deleteOpIndx int, repairOpIndx int, outcome Outcome) error {
 	r.dWeights[deleteOpIndx] *= r.decay
 	r.dWeights[deleteOpIndx] += (1 - r.decay) * r.scores[outcome]
 

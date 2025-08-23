@@ -5,15 +5,15 @@ import (
 	"testing"
 )
 
-func TestSimpleIterate(t *testing.T) {
+func TestIterate(t *testing.T) {
 	lastBest := rand.Float64()
 	initialSolution := FakeState{objective: lastBest}
 
 	bestCount := 0
 	destroyCalled := 0
 
-	destroyOperators := []Operator[float64]{
-		func(state State[float64], rnd *rand.Rand) (State[float64], error) {
+	destroyOperators := []Operator{
+		func(state State, rnd *rand.Rand) (State, error) {
 			destroyCalled++
 			current := state.(*FakeState)
 			destroyed := current.Clone()
@@ -22,8 +22,8 @@ func TestSimpleIterate(t *testing.T) {
 	}
 
 	repairCalled := 0
-	repairOperators := []Operator[float64]{
-		func(state State[float64], rnd *rand.Rand) (State[float64], error) {
+	repairOperators := []Operator{
+		func(state State, rnd *rand.Rand) (State, error) {
 			repairCalled++
 			current := state.(*FakeState)
 			current.objective = rand.Float64()
@@ -37,7 +37,7 @@ func TestSimpleIterate(t *testing.T) {
 
 	const total = 100
 
-	res, err := SimpleIterate(
+	res, err := Iterate(
 		&initialSolution,
 		destroyOperators,
 		repairOperators,

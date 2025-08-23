@@ -37,11 +37,11 @@ func main() {
 	fmt.Printf("initial solution: %.4f\n", initSol.Objective())
 
 	destroyOperatorNames := []string{"randomRemoval", "pathRemoval", "worstRemoval"}
-	destroyOperators := []alns.Operator[float64]{randomRemoval, pathRemoval, worstRemoval}
+	destroyOperators := []alns.Operator{randomRemoval, pathRemoval, worstRemoval}
 	repairOperatorNames := []string{"greedyRepair"}
-	repairOperators := []alns.Operator[float64]{greedyRepair}
+	repairOperators := []alns.Operator{greedyRepair}
 
-	sel, err := alns.NewRouletteWheel[float64](
+	sel, err := alns.NewRouletteWheel(
 		[4]float64{3, 2, 1, 0.5},
 		0.8,
 		len(destroyOperators),
@@ -51,16 +51,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	accept := alns.HillClimbing[float64]{
-		Compare: cmp.Compare[float64],
-	}
-	stop := alns.MaxRuntime[float64]{
-		MaxRuntime: 1 * time.Second,
-	}
+	accept := alns.HillClimbing{}
+	stop := alns.MaxRuntime{MaxRuntime: 1 * time.Second}
 
-	a := alns.ALNS[float64]{
+	a := alns.ALNS{
 		Rnd:               rnd,
-		Compare:           cmp.Compare[float64],
 		CollectObjectives: false,
 		DestroyOperators:  destroyOperators,
 		RepairOperators:   repairOperators,
@@ -74,7 +69,7 @@ func main() {
 	started := time.Now()
 	prevLoggedPercent := 0
 	lastBestOutcome := initSol.Objective()
-	a.Listener = func(outcome alns.Outcome, cand alns.State[float64]) error {
+	a.Listener = func(outcome alns.Outcome, cand alns.State) error {
 		if outcome == alns.Best {
 			lastBestOutcome = cand.Objective()
 		}
@@ -280,7 +275,7 @@ type TspState struct {
 	dists [][]float64
 }
 
-var _ alns.State[float64] = &TspState{}
+var _ alns.State = &TspState{}
 
 func NewTspState(nodes []int, edges map[int]int, dists [][]float64) *TspState {
 	return &TspState{
@@ -306,7 +301,7 @@ func (s *TspState) Objective() float64 {
 	return v
 }
 
-func greedyRepair(state alns.State[float64], rnd *rand.Rand) (alns.State[float64], error) {
+func greedyRepair(state alns.State, rnd *rand.Rand) (alns.State, error) {
 	current := state.(*TspState)
 
 	visited := slices.Collect(maps.Values(current.edges))
@@ -369,7 +364,7 @@ func edgesToRemove(state *TspState) int {
 	return int(float64(len(state.edges)) * DegreeOfDestruction)
 }
 
-func randomRemoval(state alns.State[float64], rnd *rand.Rand) (alns.State[float64], error) {
+func randomRemoval(state alns.State, rnd *rand.Rand) (alns.State, error) {
 	destroyed := state.(*TspState).Clone()
 
 	toRemove := edgesToRemove(destroyed)
@@ -387,7 +382,7 @@ func randomRemoval(state alns.State[float64], rnd *rand.Rand) (alns.State[float6
 	return destroyed, nil
 }
 
-func pathRemoval(state alns.State[float64], rnd *rand.Rand) (alns.State[float64], error) {
+func pathRemoval(state alns.State, rnd *rand.Rand) (alns.State, error) {
 	destroyed := state.(*TspState).Clone()
 
 	nodeIdx := rnd.IntN(len(destroyed.nodes))
@@ -404,7 +399,7 @@ func pathRemoval(state alns.State[float64], rnd *rand.Rand) (alns.State[float64]
 	return destroyed, nil
 }
 
-func worstRemoval(state alns.State[float64], rnd *rand.Rand) (alns.State[float64], error) {
+func worstRemoval(state alns.State, rnd *rand.Rand) (alns.State, error) {
 	destroyed := state.(*TspState).Clone()
 
 	worstEdges := slices.Clone(destroyed.nodes)
