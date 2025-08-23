@@ -1,7 +1,6 @@
 package main
 
 import (
-	"alns"
 	"cmp"
 	"fmt"
 	"maps"
@@ -10,6 +9,8 @@ import (
 	"os"
 	"slices"
 	"time"
+
+	"github.com/bibenga/alns"
 )
 
 func main() {
