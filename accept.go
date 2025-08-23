@@ -1,15 +1,24 @@
 package alns
 
-import "math/rand/v2"
+import (
+	"cmp"
+	"math/rand/v2"
+)
 
-type AcceptanceCriterion interface {
-	Accept(rnd *rand.Rand, best, current, candidate State) bool
+type AcceptanceCriterion[O any] interface {
+	Accept(rnd *rand.Rand, best, current, candidate State[O]) bool
 }
 
-type HillClimbing struct{}
+type HillClimbing[O any] struct {
+	Compare Comparator[O]
+}
 
-var _ AcceptanceCriterion = &HillClimbing{}
+var _ AcceptanceCriterion[int] = &HillClimbing[int]{}
 
-func (h *HillClimbing) Accept(rnd *rand.Rand, best, current, candidate State) bool {
-	return candidate.Objective() <= current.Objective()
+func NewOrderedHillClimbing[O cmp.Ordered]() HillClimbing[O] {
+	return HillClimbing[O]{Compare: cmp.Compare[O]}
+}
+
+func (h *HillClimbing[O]) Accept(rnd *rand.Rand, best, current, candidate State[O]) bool {
+	return h.Compare(candidate.Objective(), current.Objective()) <= 0
 }

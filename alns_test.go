@@ -1,6 +1,7 @@
 package alns
 
 import (
+	"cmp"
 	"math/rand/v2"
 	"testing"
 )
@@ -18,20 +19,23 @@ func (s FakeState) Objective() float64 {
 }
 
 func TestAlns(t *testing.T) {
-	a := NewWithPCGRandom(1, 2)
-	a.CollectObjectives = true
+	a := ALNS[float64]{
+		Rnd:               RuntimeRand,
+		Compare:           cmp.Compare[float64],
+		CollectObjectives: true,
+	}
 
 	lastBest := rand.Float64()
 	bestCount := 0
 	destroyCalled := 0
-	a.AddDestroyOperator(func(state State, rnd *rand.Rand) State {
+	a.AddDestroyOperator(func(state State[float64], rnd *rand.Rand) State[float64] {
 		destroyCalled++
 		current := state.(*FakeState)
 		destroyed := current.Clone()
 		return destroyed
 	})
 	repairCalled := 0
-	a.AddRepairOperator(func(state State, rnd *rand.Rand) State {
+	a.AddRepairOperator(func(state State[float64], rnd *rand.Rand) State[float64] {
 		repairCalled++
 		current := state.(*FakeState)
 		current.objective = rand.Float64()
@@ -45,9 +49,9 @@ func TestAlns(t *testing.T) {
 	total := 10000
 
 	initialSolution := FakeState{objective: lastBest}
-	opSelect, _ := NewRouletteWheel([4]float64{3, 2, 1, 0.5}, 0.8, 1, 1, nil)
-	accept := HillClimbing{}
-	stop := MaxIterations{MaxIterations: total}
+	opSelect, _ := NewRouletteWheel[float64]([4]float64{3, 2, 1, 0.5}, 0.8, 1, 1, nil)
+	accept := HillClimbing[float64]{Compare: cmp.Compare[float64]}
+	stop := MaxIterations[float64]{MaxIterations: total}
 	res := a.Iterate(&initialSolution, &opSelect, &accept, &stop)
 
 	if destroyCalled != total {
@@ -75,15 +79,22 @@ func TestAlns(t *testing.T) {
 }
 
 func TestAlnsCollectObjectives(t *testing.T) {
-	solve := func(collectObjectives bool) Result {
-		a := NewDefault()
-		a.CollectObjectives = collectObjectives
-		a.AddDestroyOperator(func(state State, rnd *rand.Rand) State { return state })
-		a.AddRepairOperator(func(state State, rnd *rand.Rand) State { return state })
+	solve := func(collectObjectives bool) Result[float64] {
+		a := ALNS[float64]{
+			Rnd:               rand.New(rand.NewPCG(1, 2)),
+			Compare:           cmp.Compare[float64],
+			CollectObjectives: collectObjectives,
+			DestroyOperators: []Operator[float64]{
+				func(state State[float64], rnd *rand.Rand) State[float64] { return state },
+			},
+			RepairOperators: []Operator[float64]{
+				func(state State[float64], rnd *rand.Rand) State[float64] { return state },
+			},
+		}
 		initialSolution := FakeState{objective: 1}
-		opSelect, _ := NewRouletteWheel([4]float64{3, 2, 1, 0.5}, 0.8, 1, 1, nil)
-		accept := HillClimbing{}
-		stop := MaxIterations{MaxIterations: 10}
+		opSelect, _ := NewRouletteWheel[float64]([4]float64{3, 2, 1, 0.5}, 0.8, 1, 1, nil)
+		accept := HillClimbing[float64]{Compare: cmp.Compare[float64]}
+		stop := MaxIterations[float64]{MaxIterations: 10}
 		res := a.Iterate(&initialSolution, &opSelect, &accept, &stop)
 		return res
 	}
