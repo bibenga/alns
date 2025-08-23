@@ -6,7 +6,7 @@ import (
 )
 
 type Statistics[O any] struct {
-	IterationCount        uint64
+	IterationCount        int
 	TotalRuntime          time.Duration
 	Objectives            []IterationObjective[O]
 	DestroyOperatorCounts []OperatorStatistics
