@@ -6,19 +6,23 @@ import (
 )
 
 type Statistics[O any] struct {
-	IterationCount        int
-	TotalRuntime          time.Duration
-	Objectives            []IterationObjective[O]
-	DestroyOperatorCounts []OperatorStatistics
-	RepairOperatorCounts  []OperatorStatistics
+	IterationCount        int                  // the number of iterations
+	TotalRuntime          time.Duration        // the total runtime
+	Runtimes              []time.Duration      // run times
+	Objectives            []O                  // previous objective values, tracking progress
+	DestroyOperatorCounts []OperatorStatistics // the destroy operator counts
+	RepairOperatorCounts  []OperatorStatistics // the repair operator counts
 }
 
 func newStatistics[O any](numIterations int, numDestroy, numRepair int) Statistics[O] {
-	var objectives []IterationObjective[O]
+	var runtimes []time.Duration
+	var objectives []O
 	if numIterations > 0 {
-		objectives = make([]IterationObjective[O], 0, numIterations)
+		runtimes = make([]time.Duration, 0, numIterations)
+		objectives = make([]O, 0, numIterations)
 	}
 	return Statistics[O]{
+		Runtimes:              runtimes,
 		Objectives:            objectives,
 		DestroyOperatorCounts: make([]OperatorStatistics, numDestroy),
 		RepairOperatorCounts:  make([]OperatorStatistics, numRepair),
@@ -26,7 +30,8 @@ func newStatistics[O any](numIterations int, numDestroy, numRepair int) Statisti
 }
 
 func (s *Statistics[O]) collectObjective(t time.Duration, objective O) {
-	s.Objectives = append(s.Objectives, IterationObjective[O]{Elapsed: t, Objective: objective})
+	s.Runtimes = append(s.Runtimes, t)
+	s.Objectives = append(s.Objectives, objective)
 }
 
 func (s *Statistics[O]) collectOperators(dIdx, rIdx int, outcome Outcome) {

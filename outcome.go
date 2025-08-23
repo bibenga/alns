@@ -7,10 +7,10 @@ import (
 type Outcome int
 
 const (
-	Best Outcome = iota
-	Better
-	Accept
-	Reject
+	Best   Outcome = iota // Candidate solution is a new global best
+	Better                // Candidate solution is better than the current incumbent
+	Accept                // Candidate solution is accepted
+	Reject                // Candidate solution is rejected
 )
 
 func (o Outcome) String() string {
