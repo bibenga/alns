@@ -1,7 +1,6 @@
 package alns
 
 import (
-	"cmp"
 	"context"
 	"math/rand/v2"
 	"time"
@@ -46,10 +45,6 @@ type NoImprovement struct {
 }
 
 var _ StoppingCriterion = &NoImprovement{}
-
-func NewNoImprovement[O cmp.Ordered](maxIterations int) NoImprovement {
-	return NoImprovement{MaxIterations: maxIterations}
-}
 
 func (ni *NoImprovement) IsDone(rnd *rand.Rand, best, current State) (bool, error) {
 	if !ni.isInitialized || best.Objective() < ni.target {

@@ -1,7 +1,6 @@
 package alns
 
 import (
-	"cmp"
 	"math/rand/v2"
 	"time"
 )
@@ -19,13 +18,6 @@ type ALNS struct {
 	Stop              StoppingCriterion
 	InitialSolution   State
 	Result            Result
-}
-
-func NewOrdered[O cmp.Ordered]() ALNS {
-	return ALNS{
-		Rnd:               RuntimeRand,
-		CollectObjectives: true,
-	}
 }
 
 func (a *ALNS) AddDestroyOperator(ops ...Operator) {
