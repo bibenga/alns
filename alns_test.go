@@ -49,6 +49,7 @@ func TestAlns(t *testing.T) {
 		destroyed := current.Clone()
 		return destroyed, nil
 	})
+
 	repairCalled := 0
 	a.AddRepairOperator(func(state State[float64], rnd *rand.Rand) (State[float64], error) {
 		repairCalled++
