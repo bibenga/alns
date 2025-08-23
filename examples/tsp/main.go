@@ -58,9 +58,6 @@ func main() {
 		MaxRuntime: 1 * time.Second,
 	}
 
-	fmt.Println("optimal solution: 564")
-	fmt.Printf("initial solution: %.4f\n", initSol.Objective())
-
 	a := alns.ALNS[float64]{
 		Rnd:               rnd,
 		Compare:           cmp.Compare[float64],
