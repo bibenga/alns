@@ -22,25 +22,30 @@ func main() {
 		nodes[i] = i
 	}
 
-	a := alns.ALNS[float64]{
-		Rnd:               rand.New(rand.NewPCG(1, 2)),
-		Compare:           cmp.Compare[float64],
-		CollectObjectives: false,
+	// rnd := rand.New(rand.NewPCG(1, 2))
+	rnd := alns.RuntimeRand
+
+	// var initSol alns.State
+	initSol := NewTspState(nodes, map[int]int{}, dists)
+	if initSolG, err := greedyRepair(initSol, rnd); err != nil {
+		panic(err)
+	} else {
+		initSol = initSolG.(*TspState)
 	}
+
+	fmt.Println("optimal solution: 564")
+	fmt.Printf("initial solution: %.4f\n", initSol.Objective())
 
 	destroyOperatorNames := []string{"randomRemoval", "pathRemoval", "worstRemoval"}
-	a.AddDestroyOperator(randomRemoval, pathRemoval, worstRemoval)
-
-	repairOperatorNames := []string{
-		"greedyRepair",
-	}
-	a.AddRepairOperator(greedyRepair)
+	destroyOperators := []alns.Operator[float64]{randomRemoval, pathRemoval, worstRemoval}
+	repairOperatorNames := []string{"greedyRepair"}
+	repairOperators := []alns.Operator[float64]{greedyRepair}
 
 	sel, err := alns.NewRouletteWheel[float64](
 		[4]float64{3, 2, 1, 0.5},
 		0.8,
-		len(a.DestroyOperators),
-		len(a.RepairOperators),
+		len(destroyOperators),
+		len(repairOperators),
 		nil,
 	)
 	if err != nil {
@@ -53,17 +58,19 @@ func main() {
 		MaxRuntime: 1 * time.Second,
 	}
 
-	// var initSol alns.State
-	initSol := NewTspState(nodes, map[int]int{}, dists)
-	initSolG, err := greedyRepair(initSol, a.Rnd)
-	if err != nil {
-		panic(err)
+	a := alns.ALNS[float64]{
+		Rnd:               rnd,
+		Compare:           cmp.Compare[float64],
+		CollectObjectives: false,
+		DestroyOperators:  destroyOperators,
+		RepairOperators:   repairOperators,
+		Selector:          &sel,
+		Acceptor:          &accept,
+		Stop:              &stop,
+		InitialSolution:   initSol,
 	}
-	initSol = initSolG.(*TspState)
 
-	fmt.Println("optimal solution: 564")
-	fmt.Printf("initial solution: %.4f\n", initSol.Objective())
-
+	// print progress
 	started := time.Now()
 	prevLoggedPercent := 0
 	lastBestOutcome := initSol.Objective()
@@ -79,31 +86,42 @@ func main() {
 		}
 		return nil
 	}
-	result, err := a.Iterate(initSol, &sel, &accept, &stop)
+	result, err := a.Iterate()
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("") // after progress make new line
-	fmt.Printf("best solution: %.4f\n", result.BestState.Objective())
+
+	fmt.Println("") // after progress we should make a new line because we use "\r"
+
+	// print result
+	// result := &a.Result
+	statistics := &result.Statistics
+	best := result.BestState.(*TspState)
+
+	fmt.Printf("best solution: %.4f\n", best.Objective())
 
 	fmt.Printf("statistics: IterationCount=%d; TotalRuntime=%s\n",
-		result.Statistics.IterationCount,
-		result.Statistics.TotalRuntime,
+		statistics.IterationCount,
+		statistics.TotalRuntime,
 	)
 	fmt.Println("  destroy operators")
 	for i, name := range destroyOperatorNames {
-		fmt.Printf("    %d: %14s; %s\n", i, name, result.Statistics.DestroyOperatorCounts[i])
+		fmt.Printf("    %d: %14s; %s\n", i, name, statistics.DestroyOperatorCounts[i])
 	}
 	fmt.Println("  repair operators")
 	for i, name := range repairOperatorNames {
-		fmt.Printf("    %d: %14s; %s\n", i, name, result.Statistics.RepairOperatorCounts[i])
+		fmt.Printf("    %d: %14s; %s\n", i, name, statistics.RepairOperatorCounts[i])
 	}
-	fmt.Println("objectives")
-	for i, r := range result.Statistics.Objectives {
-		fmt.Printf("%4d: %12s - %.4f\n", i, r.Elapsed, r.Objective)
+	if len(statistics.Objectives) > 0 {
+		fmt.Println("objectives")
+		for i, objective := range statistics.Objectives {
+			elapsed := statistics.Runtimes[i]
+			fmt.Printf("%4d: %12s - %.4f\n", i, elapsed, objective)
+		}
+	} else {
+		fmt.Println("the objectives were not collected")
 	}
 
-	best := result.BestState.(*TspState)
 	writeDotFile("examples/tsp/tsp.dot", Coords, best.edges)
 }
 
