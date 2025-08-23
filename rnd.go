@@ -9,3 +9,5 @@ func (r *randomSource) Uint64() uint64 {
 }
 
 var _ rand.Source = &randomSource{}
+
+var RuntimeRand *rand.Rand = rand.New(&randomSource{})

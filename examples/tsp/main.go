@@ -16,30 +16,41 @@ func main() {
 	// https://alns.readthedocs.io/en/latest/examples/travelling_salesman_problem.html
 	// go run examples/tsp/main.go && neato -Tpng examples/tsp/tsp.dot -o examples/tsp/tsp.png
 
-	a := alns.NewDefault()
-
-	a.CollectObjectives = false
-
-	destroyOperatorNames := []string{
-		"randomRemoval",
-		"pathRemoval",
-		"worstRemoval",
+	dists := dists(Coords)
+	nodes := make([]int, len(Coords))
+	for i := range len(Coords) {
+		nodes[i] = i
 	}
-	a.AddDestroyOperator(randomRemoval)
-	a.AddDestroyOperator(pathRemoval)
-	a.AddDestroyOperator(worstRemoval)
+
+	a := alns.ALNS[float64]{
+		Rnd:               rand.New(rand.NewPCG(1, 2)),
+		Compare:           cmp.Compare[float64],
+		CollectObjectives: false,
+	}
+
+	destroyOperatorNames := []string{"randomRemoval", "pathRemoval", "worstRemoval"}
+	a.AddDestroyOperator(randomRemoval, pathRemoval, worstRemoval)
 
 	repairOperatorNames := []string{
 		"greedyRepair",
 	}
 	a.AddRepairOperator(greedyRepair)
 
-	maxRuntime := 1 * time.Second
-
-	dists := dists(Coords)
-	nodes := make([]int, len(Coords))
-	for i := range len(Coords) {
-		nodes[i] = i
+	sel, err := alns.NewRouletteWheel[float64](
+		[4]float64{3, 2, 1, 0.5},
+		0.8,
+		len(a.DestroyOperators),
+		len(a.RepairOperators),
+		nil,
+	)
+	if err != nil {
+		panic(err)
+	}
+	accept := alns.HillClimbing[float64]{
+		Compare: cmp.Compare[float64],
+	}
+	stop := alns.MaxRuntime[float64]{
+		MaxRuntime: 1 * time.Second,
 	}
 
 	// var initSol alns.State
@@ -49,23 +60,15 @@ func main() {
 	fmt.Println("optimal solution: 564")
 	fmt.Printf("initial solution: %.4f\n", initSol.Objective())
 
-	sel, err := alns.NewRouletteWheel([4]float64{3, 2, 1, 0.5}, 0.8, len(a.DestroyOperators), len(a.RepairOperators), nil)
-	if err != nil {
-		panic(err)
-	}
-	accept := alns.HillClimbing{}
-	stop := alns.MaxRuntime{MaxRuntime: maxRuntime}
-	// stop := alns.MaxIterations{MaxIterations: 1000}
-
 	started := time.Now()
 	prevLoggedPercent := 0
 	lastBestOutcome := initSol.Objective()
-	a.Listener = func(outcome alns.Outcome, cand alns.State) {
+	a.Listener = func(outcome alns.Outcome, cand alns.State[float64]) {
 		if outcome == alns.Best {
 			lastBestOutcome = cand.Objective()
 		}
 		elapsed := time.Since(started)
-		percent := int(min(elapsed.Seconds()/maxRuntime.Seconds(), 1) * 10)
+		percent := int(min(elapsed.Seconds()/stop.MaxRuntime.Seconds(), 1) * 10)
 		if percent > prevLoggedPercent {
 			prevLoggedPercent = percent
 			fmt.Printf("\rprogress: %3d%%; lastBest: %.4f", percent*10, lastBestOutcome)
@@ -251,7 +254,7 @@ type TspState struct {
 	dists [][]float64
 }
 
-var _ alns.State = &TspState{}
+var _ alns.State[float64] = &TspState{}
 
 func NewTspState(nodes []int, edges map[int]int, dists [][]float64) *TspState {
 	return &TspState{
@@ -277,7 +280,7 @@ func (s *TspState) Objective() float64 {
 	return v
 }
 
-func greedyRepair(state alns.State, rnd *rand.Rand) alns.State {
+func greedyRepair(state alns.State[float64], rnd *rand.Rand) alns.State[float64] {
 	current := state.(*TspState)
 
 	visited := slices.Collect(maps.Values(current.edges))
@@ -340,7 +343,7 @@ func edgesToRemove(state *TspState) int {
 	return int(float64(len(state.edges)) * DegreeOfDestruction)
 }
 
-func randomRemoval(state alns.State, rnd *rand.Rand) alns.State {
+func randomRemoval(state alns.State[float64], rnd *rand.Rand) alns.State[float64] {
 	destroyed := state.(*TspState).Clone()
 
 	toRemove := edgesToRemove(destroyed)
@@ -358,7 +361,7 @@ func randomRemoval(state alns.State, rnd *rand.Rand) alns.State {
 	return destroyed
 }
 
-func pathRemoval(state alns.State, rnd *rand.Rand) alns.State {
+func pathRemoval(state alns.State[float64], rnd *rand.Rand) alns.State[float64] {
 	destroyed := state.(*TspState).Clone()
 
 	nodeIdx := rnd.IntN(len(destroyed.nodes))
@@ -375,7 +378,7 @@ func pathRemoval(state alns.State, rnd *rand.Rand) alns.State {
 	return destroyed
 }
 
-func worstRemoval(state alns.State, rnd *rand.Rand) alns.State {
+func worstRemoval(state alns.State[float64], rnd *rand.Rand) alns.State[float64] {
 	destroyed := state.(*TspState).Clone()
 
 	worstEdges := slices.Clone(destroyed.nodes)

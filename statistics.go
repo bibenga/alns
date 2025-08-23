@@ -5,38 +5,38 @@ import (
 	"time"
 )
 
-type Statistics struct {
-	IterationCount        uint
+type Statistics[O any] struct {
+	IterationCount        uint64
 	TotalRuntime          time.Duration
-	Objectives            []IterationObjective
+	Objectives            []IterationObjective[O]
 	DestroyOperatorCounts []OperatorStatistics
 	RepairOperatorCounts  []OperatorStatistics
 }
 
-func newStatistics(numIterations int, numDestroy, numRepair int) Statistics {
-	var objectives []IterationObjective
+func newStatistics[O any](numIterations int, numDestroy, numRepair int) Statistics[O] {
+	var objectives []IterationObjective[O]
 	if numIterations > 0 {
-		objectives = make([]IterationObjective, 0, numIterations)
+		objectives = make([]IterationObjective[O], 0, numIterations)
 	}
-	return Statistics{
+	return Statistics[O]{
 		Objectives:            objectives,
 		DestroyOperatorCounts: make([]OperatorStatistics, numDestroy),
 		RepairOperatorCounts:  make([]OperatorStatistics, numRepair),
 	}
 }
 
-func (s *Statistics) collectObjective(t time.Duration, objective float64) {
-	s.Objectives = append(s.Objectives, IterationObjective{Elapsed: t, Objective: objective})
+func (s *Statistics[O]) collectObjective(t time.Duration, objective O) {
+	s.Objectives = append(s.Objectives, IterationObjective[O]{Elapsed: t, Objective: objective})
 }
 
-func (s *Statistics) collectOperators(dIdx, rIdx int, outcome Outcome) {
+func (s *Statistics[O]) collectOperators(dIdx, rIdx int, outcome Outcome) {
 	s.DestroyOperatorCounts[dIdx][outcome]++
 	s.RepairOperatorCounts[rIdx][outcome]++
 }
 
-type IterationObjective struct {
+type IterationObjective[O any] struct {
 	Elapsed   time.Duration
-	Objective float64
+	Objective O
 }
 
 type OperatorStatistics [4]int // see Outcome

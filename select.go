@@ -5,12 +5,12 @@ import (
 	"math/rand/v2"
 )
 
-type OperatorSelectionScheme interface {
-	Select(rnd *rand.Rand, best, current State) (deleteOpIndx, repairOpIndx int)
-	Update(candidate State, deleteOpIndx, repairOpIndx int, outcome Outcome)
+type OperatorSelectionScheme[O any] interface {
+	Select(rnd *rand.Rand, best, current State[O]) (deleteOpIndx, repairOpIndx int)
+	Update(candidate State[O], deleteOpIndx, repairOpIndx int, outcome Outcome)
 }
 
-type RouletteWheel struct {
+type RouletteWheel[O any] struct {
 	scores     [4]float64
 	decay      float64
 	numDestroy int
@@ -20,16 +20,16 @@ type RouletteWheel struct {
 	rWeights   []float64
 }
 
-var _ OperatorSelectionScheme = &RouletteWheel{}
+var _ OperatorSelectionScheme[int] = &RouletteWheel[int]{}
 
-func NewRouletteWheel(
+func NewRouletteWheel[O any](
 	scores [4]float64,
 	decay float64,
 	numDestroy int,
 	numRepair int,
 	opCoupling [][]bool,
-) (RouletteWheel, error) {
-	r := RouletteWheel{
+) (RouletteWheel[O], error) {
+	r := RouletteWheel[O]{
 		scores:     scores,
 		decay:      decay,
 		numDestroy: numDestroy,
@@ -45,12 +45,12 @@ func NewRouletteWheel(
 		r.rWeights[i] = 1
 	}
 	if err := r.validate(); err != nil {
-		return RouletteWheel{}, err
+		return RouletteWheel[O]{}, err
 	}
 	return r, nil
 }
 
-func (r *RouletteWheel) validate() error {
+func (r *RouletteWheel[O]) validate() error {
 	if min(r.scores[0], r.scores[1], r.scores[2], r.scores[3]) < 0 {
 		return fmt.Errorf("negative scores are not understood")
 	}
@@ -94,7 +94,7 @@ func (r *RouletteWheel) validate() error {
 	return nil
 }
 
-func (r *RouletteWheel) Select(rnd *rand.Rand, best State, current State) (int, int) {
+func (r *RouletteWheel[O]) Select(rnd *rand.Rand, best State[O], current State[O]) (int, int) {
 	if r.opCoupling != nil {
 		dIdx := weightedRandomIndex(rnd, r.dWeights)
 		coupledRIdcs := r.flatTrue(r.opCoupling[dIdx])
@@ -107,7 +107,7 @@ func (r *RouletteWheel) Select(rnd *rand.Rand, best State, current State) (int, 
 	}
 }
 
-func (r *RouletteWheel) Update(candidate State, deleteOpIndx int, repairOpIndx int, outcome Outcome) {
+func (r *RouletteWheel[O]) Update(candidate State[O], deleteOpIndx int, repairOpIndx int, outcome Outcome) {
 	r.dWeights[deleteOpIndx] *= r.decay
 	r.dWeights[deleteOpIndx] += (1 - r.decay) * r.scores[outcome]
 
@@ -115,7 +115,7 @@ func (r *RouletteWheel) Update(candidate State, deleteOpIndx int, repairOpIndx i
 	r.rWeights[repairOpIndx] += (1 - r.decay) * r.scores[outcome]
 }
 
-func (r *RouletteWheel) flatTrue(s []bool) []int {
+func (r *RouletteWheel[O]) flatTrue(s []bool) []int {
 	res := make([]int, 0, len(s))
 	for i, v := range s {
 		if v {
@@ -125,7 +125,7 @@ func (r *RouletteWheel) flatTrue(s []bool) []int {
 	return res
 }
 
-func (r *RouletteWheel) extract(s []float64, indices []int) []float64 {
+func (r *RouletteWheel[O]) extract(s []float64, indices []int) []float64 {
 	res := make([]float64, len(indices))
 	for i := range indices {
 		res[i] = s[i]
