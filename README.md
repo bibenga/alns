@@ -15,17 +15,42 @@ import "github.com/bibenga/alns"
 
 ## Exmaple
 ```go
-solver := alns.NewDefault()
+initSol := NewMyProblemState(...)
 
-solver.AddDestroyOperator(randomRemoval, "randomRemoval")
-solver.AddDestroyOperator(pathRemoval, "pathRemoval")
-solver.AddRepairOperator(greedyRepair, "greedyRepair")
+destroyOperators := []alns.Operator[float64]{randomRemoval, pathRemoval, worstRemoval}
+repairOperators := []alns.Operator[float64]{greedyRepair}
 
-initSolution := NewMyProblemState(...)
+selector, err := alns.NewRouletteWheel[float64](
+    [4]float64{3, 2, 1, 0.5},
+    0.8,
+    len(destroyOperators),
+    len(repairOperators),
+    nil,
+)
+if err != nil {
+    ...
+}
+acceptor := alns.HillClimbing[float64]{
+    Compare: cmp.Compare[float64],
+}
+stop := alns.MaxRuntime[float64]{
+    MaxRuntime: 1 * time.Second,
+}
 
-sel := alns.NewRouletteWheel([]float64{3, 2, 1, 0.5}, 0.8, 3, 1, nil)
-accept := alns.HillClimbing{}
-stop := alns.MaxIterations{MaxIterations: 10}
-result := solver.Iterate(initSolution, &sel, &accept, &stop)
+a := alns.ALNS[float64]{
+    Rnd:               rnd,
+    Compare:           cmp.Compare[float64],
+    DestroyOperators:  destroyOperators,
+    RepairOperators:   repairOperators,
+    Selector:          &selector,
+    Acceptor:          &acceptor,
+    Stop:              &stop,
+    InitialSolution:   initSol,
+}
 
+if result, err := a.Iterate(); err != nil {
+    ...
+} else {
+    // do something with result
+}
 ```

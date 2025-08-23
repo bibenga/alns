@@ -10,16 +10,17 @@ type OperatorSelectionScheme[O any] interface {
 	Update(candidate State[O], deleteOpIndx, repairOpIndx int, outcome Outcome) error
 }
 
+// The `RouletteWheel` scheme updates operator weights as a convex combination of the current weight, and the new score.
 type RouletteWheel[O any] struct {
-	scores          [4]float64
-	decay           float64
-	numDestroy      int
-	numRepair       int
-	opCoupling      [][]bool
-	dWeights        []float64
-	rWeights        []float64
-	coupledRIdcs    []int     // used in Select for caching
-	coupledRWeights []float64 // used in Select for caching
+	scores          [4]float64 // representing the weight updates when the candidate solution results in a new global
+	decay           float64    // operator decay parameter :math:`\theta \in [0, 1]`
+	numDestroy      int        // number of destroy operators
+	numRepair       int        // number of repair operators
+	opCoupling      [][]bool   // boolean matrix that indicates coupling between destroy and repair operators
+	dWeights        []float64  // the weights of the destroy operators
+	rWeights        []float64  // the weights of the repair operators
+	coupledRIdcs    []int      // used in Select for caching
+	coupledRWeights []float64  // used in Select for caching
 }
 
 var _ OperatorSelectionScheme[int] = &RouletteWheel[int]{}
