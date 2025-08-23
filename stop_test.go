@@ -12,7 +12,12 @@ func TestMaxIterations(t *testing.T) {
 	stop := MaxIterations[float64]{MaxIterations: 10}
 
 	i := 0
-	for !stop.IsDone(nil, nil, nil) {
+	for {
+		if done, err := stop.IsDone(nil, nil, nil); err != nil {
+			t.Fatal(err)
+		} else if done {
+			break
+		}
 		i++
 	}
 
@@ -28,7 +33,12 @@ func TestMaxRuntime(t *testing.T) {
 	stop := MaxRuntime[float64]{MaxRuntime: 100 * time.Millisecond}
 
 	started := time.Now()
-	for !stop.IsDone(nil, nil, nil) {
+	for {
+		if done, err := stop.IsDone(nil, nil, nil); err != nil {
+			t.Fatal(err)
+		} else if done {
+			break
+		}
 		time.Sleep(1 * time.Millisecond)
 	}
 	elapsed := time.Since(started).Milliseconds()
@@ -46,7 +56,12 @@ func TestNoImprovement(t *testing.T) {
 		best := FakeState{objective: 1}
 		curr := FakeState{objective: 1}
 		i := 0
-		for !stop.IsDone(nil, best, curr) {
+		for {
+			if done, err := stop.IsDone(nil, best, curr); err != nil {
+				t.Fatal(err)
+			} else if done {
+				break
+			}
 			i++
 		}
 		if i != 10 {
@@ -65,7 +80,12 @@ func TestNoImprovement(t *testing.T) {
 		best := FakeState{objective: 100}
 		curr := FakeState{objective: 100}
 		i := 0
-		for !stop.IsDone(nil, best, curr) {
+		for {
+			if done, err := stop.IsDone(nil, best, curr); err != nil {
+				t.Fatal(err)
+			} else if done {
+				break
+			}
 			best.objective = max(math.Round(curr.objective-1), 0)
 			curr.objective = max(math.Round(curr.objective-1), 0)
 			i++
@@ -86,7 +106,12 @@ func TestStoppingCriterions(t *testing.T) {
 	}
 
 	i := 0
-	for !stop.IsDone(nil, nil, nil) {
+	for {
+		if done, err := stop.IsDone(nil, nil, nil); err != nil {
+			t.Fatal(err)
+		} else if done {
+			break
+		}
 		i++
 	}
 
@@ -102,7 +127,12 @@ func TestContext(t *testing.T) {
 	stop := Context[float64]{Context: ctx}
 
 	started := time.Now()
-	for !stop.IsDone(nil, nil, nil) {
+	for {
+		if done, err := stop.IsDone(nil, nil, nil); err != nil {
+			t.Fatal(err)
+		} else if done {
+			break
+		}
 		time.Sleep(1 * time.Millisecond)
 	}
 	elapsed := time.Since(started).Milliseconds()

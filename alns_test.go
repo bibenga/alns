@@ -43,14 +43,14 @@ func TestAlns(t *testing.T) {
 
 	bestCount := 0
 	destroyCalled := 0
-	a.AddDestroyOperator(func(state State[float64], rnd *rand.Rand) State[float64] {
+	a.AddDestroyOperator(func(state State[float64], rnd *rand.Rand) (State[float64], error) {
 		destroyCalled++
 		current := state.(*FakeState)
 		destroyed := current.Clone()
-		return destroyed
+		return destroyed, nil
 	})
 	repairCalled := 0
-	a.AddRepairOperator(func(state State[float64], rnd *rand.Rand) State[float64] {
+	a.AddRepairOperator(func(state State[float64], rnd *rand.Rand) (State[float64], error) {
 		repairCalled++
 		current := state.(*FakeState)
 		current.objective = rand.Float64()
@@ -58,10 +58,13 @@ func TestAlns(t *testing.T) {
 			lastBest = current.objective
 			bestCount++
 		}
-		return current
+		return current, nil
 	})
 
-	res := a.Iterate()
+	res, err := a.Iterate()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if destroyCalled != total {
 		t.Errorf("%d destroy calls expected, actual %d calls", total, destroyCalled)
@@ -98,17 +101,20 @@ func TestAlnsCollectObjectives(t *testing.T) {
 			Compare:           cmp.Compare[float64],
 			CollectObjectives: collectObjectives,
 			DestroyOperators: []Operator[float64]{
-				func(state State[float64], rnd *rand.Rand) State[float64] { return state },
+				func(state State[float64], rnd *rand.Rand) (State[float64], error) { return state, nil },
 			},
 			RepairOperators: []Operator[float64]{
-				func(state State[float64], rnd *rand.Rand) State[float64] { return state },
+				func(state State[float64], rnd *rand.Rand) (State[float64], error) { return state, nil },
 			},
 			Selector:        &opSelect,
 			Acceptor:        &accept,
 			Stop:            &stop,
 			InitialSolution: initialSolution,
 		}
-		res := a.Iterate()
+		res, err := a.Iterate()
+		if err != nil {
+			t.Fatal(err)
+		}
 		return res
 	}
 	t.Run("With", func(t *testing.T) {

@@ -9,7 +9,6 @@ import (
 	"math/rand/v2"
 	"os"
 	"slices"
-	"sync"
 	"time"
 )
 
@@ -26,8 +25,13 @@ func main() {
 	// rnd := rand.New(rand.NewPCG(1, 2))
 	rnd := alns.RuntimeRand
 
+	// var initSol alns.State
 	initSol := NewTspState(nodes, map[int]int{}, dists)
-	initSol = greedyRepair(initSol, rnd).(*TspState)
+	if initSolG, err := greedyRepair(initSol, rnd); err != nil {
+		panic(err)
+	} else {
+		initSol = initSolG.(*TspState)
+	}
 
 	fmt.Println("optimal solution: 564")
 	fmt.Printf("initial solution: %.4f\n", initSol.Objective())
@@ -54,6 +58,9 @@ func main() {
 		MaxRuntime: 1 * time.Second,
 	}
 
+	fmt.Println("optimal solution: 564")
+	fmt.Printf("initial solution: %.4f\n", initSol.Objective())
+
 	a := alns.ALNS[float64]{
 		Rnd:               rnd,
 		Compare:           cmp.Compare[float64],
@@ -70,7 +77,7 @@ func main() {
 	started := time.Now()
 	prevLoggedPercent := 0
 	lastBestOutcome := initSol.Objective()
-	a.Listener = func(outcome alns.Outcome, cand alns.State[float64]) {
+	a.Listener = func(outcome alns.Outcome, cand alns.State[float64]) error {
 		if outcome == alns.Best {
 			lastBestOutcome = cand.Objective()
 		}
@@ -80,20 +87,17 @@ func main() {
 			prevLoggedPercent = percent
 			fmt.Printf("\rprogress: %3d%%; lastBest: %.4f", percent*10, lastBestOutcome)
 		}
+		return nil
+	}
+	result, err := a.Iterate()
+	if err != nil {
+		panic(err)
 	}
 
-	// a.Iterate()
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		a.Iterate()
-	}()
-	wg.Wait()
 	fmt.Println("") // after progress we should make a new line because we use "\r"
 
 	// print result
-	result := &a.Result
+	// result := &a.Result
 	statistics := &result.Statistics
 	best := result.BestState.(*TspState)
 
@@ -305,7 +309,7 @@ func (s *TspState) Objective() float64 {
 	return v
 }
 
-func greedyRepair(state alns.State[float64], rnd *rand.Rand) alns.State[float64] {
+func greedyRepair(state alns.State[float64], rnd *rand.Rand) (alns.State[float64], error) {
 	current := state.(*TspState)
 
 	visited := slices.Collect(maps.Values(current.edges))
@@ -346,7 +350,7 @@ func greedyRepair(state alns.State[float64], rnd *rand.Rand) alns.State[float64]
 		visited = append(visited, nearest)
 	}
 
-	return state
+	return state, nil
 }
 
 func wouldFormSubcycle(fromNode, toNode int, state *TspState) bool {
@@ -368,7 +372,7 @@ func edgesToRemove(state *TspState) int {
 	return int(float64(len(state.edges)) * DegreeOfDestruction)
 }
 
-func randomRemoval(state alns.State[float64], rnd *rand.Rand) alns.State[float64] {
+func randomRemoval(state alns.State[float64], rnd *rand.Rand) (alns.State[float64], error) {
 	destroyed := state.(*TspState).Clone()
 
 	toRemove := edgesToRemove(destroyed)
@@ -383,10 +387,10 @@ func randomRemoval(state alns.State[float64], rnd *rand.Rand) alns.State[float64
 		}
 	}
 
-	return destroyed
+	return destroyed, nil
 }
 
-func pathRemoval(state alns.State[float64], rnd *rand.Rand) alns.State[float64] {
+func pathRemoval(state alns.State[float64], rnd *rand.Rand) (alns.State[float64], error) {
 	destroyed := state.(*TspState).Clone()
 
 	nodeIdx := rnd.IntN(len(destroyed.nodes))
@@ -400,10 +404,10 @@ func pathRemoval(state alns.State[float64], rnd *rand.Rand) alns.State[float64] 
 		node = nextNode
 	}
 
-	return destroyed
+	return destroyed, nil
 }
 
-func worstRemoval(state alns.State[float64], rnd *rand.Rand) alns.State[float64] {
+func worstRemoval(state alns.State[float64], rnd *rand.Rand) (alns.State[float64], error) {
 	destroyed := state.(*TspState).Clone()
 
 	worstEdges := slices.Clone(destroyed.nodes)
@@ -419,7 +423,7 @@ func worstRemoval(state alns.State[float64], rnd *rand.Rand) alns.State[float64]
 		delete(destroyed.edges, worstEdges[len(worstEdges)-(idx+1)])
 	}
 
-	return destroyed
+	return destroyed, nil
 }
 
 func writeDotFile(filename string, nodes [][2]float64, edges map[int]int) {
