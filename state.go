@@ -1,5 +1,5 @@
 package alns
 
-type State[O any] interface {
-	Objective() O
+type State interface {
+	Objective() float64
 }

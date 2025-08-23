@@ -1,7 +1,6 @@
 package alns
 
 import (
-	"cmp"
 	"context"
 	"math"
 	"testing"
@@ -9,7 +8,7 @@ import (
 )
 
 func TestMaxIterations(t *testing.T) {
-	stop := MaxIterations[float64]{MaxIterations: 10}
+	stop := MaxIterations{MaxIterations: 10}
 
 	i := 0
 	for {
@@ -30,7 +29,7 @@ func TestMaxIterations(t *testing.T) {
 }
 
 func TestMaxRuntime(t *testing.T) {
-	stop := MaxRuntime[float64]{MaxRuntime: 100 * time.Millisecond}
+	stop := MaxRuntime{MaxRuntime: 100 * time.Millisecond}
 
 	started := time.Now()
 	for {
@@ -49,10 +48,7 @@ func TestMaxRuntime(t *testing.T) {
 
 func TestNoImprovement(t *testing.T) {
 	t.Run("Simple", func(t *testing.T) {
-		stop := NoImprovement[float64]{
-			Compare:       cmp.Compare[float64],
-			MaxIterations: 10,
-		}
+		stop := NoImprovement{MaxIterations: 10}
 		best := FakeState{objective: 1}
 		curr := FakeState{objective: 1}
 		i := 0
@@ -73,10 +69,7 @@ func TestNoImprovement(t *testing.T) {
 	})
 
 	t.Run("SimulatedDecrease", func(t *testing.T) {
-		stop := NoImprovement[float64]{
-			Compare:       cmp.Compare[float64],
-			MaxIterations: 10,
-		}
+		stop := NoImprovement{MaxIterations: 10}
 		best := FakeState{objective: 100}
 		curr := FakeState{objective: 100}
 		i := 0
@@ -100,9 +93,9 @@ func TestNoImprovement(t *testing.T) {
 }
 
 func TestStoppingCriterions(t *testing.T) {
-	stop := StoppingCriterions[float64]{
-		&MaxIterations[float64]{MaxIterations: 10},
-		&MaxIterations[float64]{MaxIterations: 20},
+	stop := StoppingCriterions{
+		&MaxIterations{MaxIterations: 10},
+		&MaxIterations{MaxIterations: 20},
 	}
 
 	i := 0
@@ -124,7 +117,7 @@ func TestContext(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 
-	stop := Context[float64]{Context: ctx}
+	stop := Context{Context: ctx}
 
 	started := time.Now()
 	for {
