@@ -29,9 +29,9 @@ go.work.sum
 
 # Editor/IDE
 # .idea/
-# .vscode/
+.vscode/
+.devcontainer/
 
 .DS_Store
-.devcontainer
 *.dot
 *.png
