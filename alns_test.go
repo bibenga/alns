@@ -28,14 +28,14 @@ func TestAlns(t *testing.T) {
 	lastBest := rand.Float64()
 	bestCount := 0
 	destroyCalled := 0
-	a.AddDestroyOperator(func(state State[float64], rnd *rand.Rand) State[float64] {
+	a.AddDestroyOperator(func(state State[float64], rnd *rand.Rand) (State[float64], error) {
 		destroyCalled++
 		current := state.(*FakeState)
 		destroyed := current.Clone()
-		return destroyed
+		return destroyed, nil
 	})
 	repairCalled := 0
-	a.AddRepairOperator(func(state State[float64], rnd *rand.Rand) State[float64] {
+	a.AddRepairOperator(func(state State[float64], rnd *rand.Rand) (State[float64], error) {
 		repairCalled++
 		current := state.(*FakeState)
 		current.objective = rand.Float64()
@@ -43,7 +43,7 @@ func TestAlns(t *testing.T) {
 			lastBest = current.objective
 			bestCount++
 		}
-		return current
+		return current, nil
 	})
 
 	total := 10000
@@ -52,7 +52,10 @@ func TestAlns(t *testing.T) {
 	opSelect, _ := NewRouletteWheel[float64]([4]float64{3, 2, 1, 0.5}, 0.8, 1, 1, nil)
 	accept := HillClimbing[float64]{Compare: cmp.Compare[float64]}
 	stop := MaxIterations[float64]{MaxIterations: total}
-	res := a.Iterate(&initialSolution, &opSelect, &accept, &stop)
+	res, err := a.Iterate(&initialSolution, &opSelect, &accept, &stop)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if destroyCalled != total {
 		t.Errorf("%d destroy calls expected, actual %d calls", total, destroyCalled)
@@ -79,23 +82,26 @@ func TestAlns(t *testing.T) {
 }
 
 func TestAlnsCollectObjectives(t *testing.T) {
-	solve := func(collectObjectives bool) Result[float64] {
+	solve := func(collectObjectives bool) *Result[float64] {
 		a := ALNS[float64]{
 			Rnd:               rand.New(rand.NewPCG(1, 2)),
 			Compare:           cmp.Compare[float64],
 			CollectObjectives: collectObjectives,
 			DestroyOperators: []Operator[float64]{
-				func(state State[float64], rnd *rand.Rand) State[float64] { return state },
+				func(state State[float64], rnd *rand.Rand) (State[float64], error) { return state, nil },
 			},
 			RepairOperators: []Operator[float64]{
-				func(state State[float64], rnd *rand.Rand) State[float64] { return state },
+				func(state State[float64], rnd *rand.Rand) (State[float64], error) { return state, nil },
 			},
 		}
 		initialSolution := FakeState{objective: 1}
 		opSelect, _ := NewRouletteWheel[float64]([4]float64{3, 2, 1, 0.5}, 0.8, 1, 1, nil)
 		accept := HillClimbing[float64]{Compare: cmp.Compare[float64]}
 		stop := MaxIterations[float64]{MaxIterations: 10}
-		res := a.Iterate(&initialSolution, &opSelect, &accept, &stop)
+		res, err := a.Iterate(&initialSolution, &opSelect, &accept, &stop)
+		if err != nil {
+			t.Fatal(err)
+		}
 		return res
 	}
 	t.Run("With", func(t *testing.T) {

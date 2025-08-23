@@ -6,7 +6,7 @@ import (
 )
 
 type AcceptanceCriterion[O any] interface {
-	Accept(rnd *rand.Rand, best, current, candidate State[O]) bool
+	Accept(rnd *rand.Rand, best, current, candidate State[O]) (bool, error)
 }
 
 type HillClimbing[O any] struct {
@@ -19,6 +19,6 @@ func NewOrderedHillClimbing[O cmp.Ordered]() HillClimbing[O] {
 	return HillClimbing[O]{Compare: cmp.Compare[O]}
 }
 
-func (h *HillClimbing[O]) Accept(rnd *rand.Rand, best, current, candidate State[O]) bool {
-	return h.Compare(candidate.Objective(), current.Objective()) <= 0
+func (h *HillClimbing[O]) Accept(rnd *rand.Rand, best, current, candidate State[O]) (bool, error) {
+	return h.Compare(candidate.Objective(), current.Objective()) <= 0, nil
 }

@@ -66,8 +66,17 @@ func TestRouletteWheel(t *testing.T) {
 
 		for range total {
 			outcome := Outcome(r.IntN(4))
-			dIdx, rIdx := selector.Select(r, best, current)
-			selector.Update(candidate, dIdx, rIdx, outcome)
+
+			dIdx, rIdx, err := selector.Select(r, best, current)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			err = selector.Update(candidate, dIdx, rIdx, outcome)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			dCounter[dIdx]++
 			rCounter[rIdx]++
 		}
@@ -102,14 +111,23 @@ func TestRouletteWheel(t *testing.T) {
 
 		for range total {
 			outcome := Outcome(r.IntN(4))
-			dIdx, rIdx := selector.Select(r, best, current)
+
+			dIdx, rIdx, err := selector.Select(r, best, current)
+			if err != nil {
+				t.Fatal(err)
+			}
 			if !(0 <= dIdx && dIdx < selector.numDestroy) {
 				t.Fatalf("destroy index %d is invalid", dIdx)
 			}
 			if !(0 <= rIdx && rIdx < selector.numRepair) {
 				t.Fatalf("destroy index %d is invalid", dIdx)
 			}
-			selector.Update(candidate, dIdx, rIdx, outcome)
+
+			err = selector.Update(candidate, dIdx, rIdx, outcome)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			dCounter[dIdx]++
 			rCounter[rIdx]++
 		}
