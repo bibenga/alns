@@ -39,11 +39,6 @@ func (s *Statistics) collectOperators(dIdx, rIdx int, outcome Outcome) {
 	s.RepairOperatorCounts[rIdx][outcome]++
 }
 
-type IterationObjective[O any] struct {
-	Elapsed   time.Duration
-	Objective O
-}
-
 type OperatorStatistics [4]int // see Outcome
 
 func (o OperatorStatistics) String() string {
