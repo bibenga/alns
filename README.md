@@ -18,10 +18,10 @@ import "github.com/bibenga/alns"
 ```go
 initSol := NewMyProblemState(...)
 
-destroyOperators := []alns.Operator[float64]{randomRemoval, pathRemoval, worstRemoval}
-repairOperators := []alns.Operator[float64]{greedyRepair}
+destroyOperators := []alns.Operator{randomRemoval, pathRemoval, worstRemoval}
+repairOperators := []alns.Operator{greedyRepair}
 
-selector, err := alns.NewRouletteWheel[float64](
+selector, err := alns.NewRouletteWheel(
     [4]float64{3, 2, 1, 0.5},
     0.8,
     len(destroyOperators),
@@ -31,16 +31,11 @@ selector, err := alns.NewRouletteWheel[float64](
 if err != nil {
     ...
 }
-acceptor := alns.HillClimbing[float64]{
-    Compare: cmp.Compare[float64],
-}
-stop := alns.MaxRuntime[float64]{
-    MaxRuntime: 1 * time.Second,
-}
+acceptor := alns.HillClimbing{}
+stop := alns.MaxRuntime{MaxRuntime: 1 * time.Second}
 
-a := alns.ALNS[float64]{
+a := alns.ALNS{
     Rnd:               rnd,
-    Compare:           cmp.Compare[float64],
     DestroyOperators:  destroyOperators,
     RepairOperators:   repairOperators,
     Selector:          &selector,
