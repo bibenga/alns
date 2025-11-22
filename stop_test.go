@@ -1,6 +1,7 @@
 package alns
 
 import (
+	"cmp"
 	"context"
 	"math"
 	"testing"
@@ -48,7 +49,10 @@ func TestMaxRuntime(t *testing.T) {
 
 func TestNoImprovement(t *testing.T) {
 	t.Run("Simple", func(t *testing.T) {
-		stop := NoImprovement{MaxIterations: 10}
+		stop := NoImprovement{
+			Compare:       cmp.Compare[float64],
+			MaxIterations: 10,
+		}
 		best := FakeState{objective: 1}
 		curr := FakeState{objective: 1}
 		i := 0

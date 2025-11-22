@@ -7,8 +7,11 @@ import (
 
 type Listener func(outcome Outcome, cand State) error
 
+type CompareFunc func(a, b float64) int
+
 type ALNS struct {
 	Rnd               *rand.Rand
+	Compare           CompareFunc
 	CollectObjectives bool
 	Listener          Listener
 	DestroyOperators  []Operator
@@ -129,12 +132,12 @@ func (a *ALNS) determineOutcome(best, curr, cand State) (Outcome, error) {
 		// accept candidate
 		outcome = Accept
 
-		if Compare(cand.Objective(), curr.Objective()) < 0 {
+		if a.Compare(cand.Objective(), curr.Objective()) < 0 {
 			outcome = Better
 		}
 	}
 
-	if Compare(cand.Objective(), best.Objective()) < 0 {
+	if a.Compare(cand.Objective(), best.Objective()) < 0 {
 		// candidate is new best
 		outcome = Best
 	}

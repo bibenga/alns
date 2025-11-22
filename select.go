@@ -1,6 +1,7 @@
 package alns
 
 import (
+	"cmp"
 	"fmt"
 	"math/rand/v2"
 )
@@ -12,6 +13,7 @@ type OperatorSelectionScheme interface {
 
 // The `RouletteWheel` scheme updates operator weights as a convex combination of the current weight, and the new score.
 type RouletteWheel struct {
+	compare         CompareFunc
 	scores          [4]float64 // representing the weight updates when the candidate solution results in a new global
 	decay           float64    // operator decay parameter :math:`\theta \in [0, 1]`
 	numDestroy      int        // number of destroy operators
@@ -26,6 +28,7 @@ type RouletteWheel struct {
 var _ OperatorSelectionScheme = &RouletteWheel{}
 
 func NewRouletteWheel(
+	compare CompareFunc,
 	scores [4]float64,
 	decay float64,
 	numDestroy int,
@@ -33,6 +36,7 @@ func NewRouletteWheel(
 	opCoupling [][]bool,
 ) (RouletteWheel, error) {
 	r := RouletteWheel{
+		compare:    cmp.Compare[float64],
 		scores:     scores,
 		decay:      decay,
 		numDestroy: numDestroy,
@@ -57,34 +61,34 @@ func NewRouletteWheel(
 	return r, nil
 }
 
-func (r *RouletteWheel) validate() error {
-	if min(r.scores[0], r.scores[1], r.scores[2], r.scores[3]) < 0 {
+func (s *RouletteWheel) validate() error {
+	if min(s.scores[0], s.scores[1], s.scores[2], s.scores[3]) < 0 {
 		return fmt.Errorf("negative scores are not understood")
 	}
 
-	if !(0 <= r.decay && r.decay <= 1) {
+	if !(0 <= s.decay && s.decay <= 1) {
 		return fmt.Errorf("decay outside [0, 1] not understood")
 	}
 
-	if r.opCoupling != nil {
-		if len(r.opCoupling) == 0 {
+	if s.opCoupling != nil {
+		if len(s.opCoupling) == 0 {
 			return fmt.Errorf("coupling matrix of shape (%d, %d), expected (%d, %d)",
-				0, 0, r.numDestroy, r.numRepair)
+				0, 0, s.numDestroy, s.numRepair)
 		}
-		rows := len(r.opCoupling)
-		cols := len(r.opCoupling[0])
-		for i, row := range r.opCoupling {
+		rows := len(s.opCoupling)
+		cols := len(s.opCoupling[0])
+		for i, row := range s.opCoupling {
 			if len(row) != cols {
 				return fmt.Errorf("the number of columns in a row %d does not match the expected %d",
 					i, cols)
 			}
 		}
-		if rows != r.numDestroy || cols != r.numRepair {
+		if rows != s.numDestroy || cols != s.numRepair {
 			return fmt.Errorf("coupling matrix of shape (%d, %d), expected (%d, %d)",
-				rows, cols, r.numDestroy, r.numRepair)
+				rows, cols, s.numDestroy, s.numRepair)
 		}
 
-		for i, row := range r.opCoupling {
+		for i, row := range s.opCoupling {
 			isCoupled := false
 			for _, value := range row {
 				if value {
@@ -101,38 +105,38 @@ func (r *RouletteWheel) validate() error {
 	return nil
 }
 
-func (r *RouletteWheel) Select(rnd *rand.Rand, best State, current State) (int, int, error) {
-	if r.opCoupling != nil {
+func (s *RouletteWheel) Select(rnd *rand.Rand, best State, current State) (int, int, error) {
+	if s.opCoupling != nil {
 		// select destroy operator
-		dIdx := weightedRandomIndex(rnd, r.dWeights)
+		dIdx := weightedRandomIndex(s.compare, rnd, s.dWeights)
 
 		// extract coupled repair indeces and their weight for selected destroy operator
-		r.coupledRIdcs = r.coupledRIdcs[:0]
-		r.coupledRWeights = r.coupledRWeights[:0]
-		for i, v := range r.opCoupling[dIdx] {
+		s.coupledRIdcs = s.coupledRIdcs[:0]
+		s.coupledRWeights = s.coupledRWeights[:0]
+		for i, v := range s.opCoupling[dIdx] {
 			if v {
-				r.coupledRIdcs = append(r.coupledRIdcs, i)
-				r.coupledRWeights = append(r.coupledRWeights, r.rWeights[i])
+				s.coupledRIdcs = append(s.coupledRIdcs, i)
+				s.coupledRWeights = append(s.coupledRWeights, s.rWeights[i])
 			}
 		}
 
 		// select repair operator
-		rIdx := r.coupledRIdcs[weightedRandomIndex(rnd, r.coupledRWeights)]
+		rIdx := s.coupledRIdcs[weightedRandomIndex(s.compare, rnd, s.coupledRWeights)]
 
 		return dIdx, rIdx, nil
 	} else {
-		dIdx := weightedRandomIndex(rnd, r.dWeights)
-		rIdx := weightedRandomIndex(rnd, r.rWeights)
+		dIdx := weightedRandomIndex(s.compare, rnd, s.dWeights)
+		rIdx := weightedRandomIndex(s.compare, rnd, s.rWeights)
 		return dIdx, rIdx, nil
 	}
 }
 
-func (r *RouletteWheel) Update(candidate State, deleteOpIndx int, repairOpIndx int, outcome Outcome) error {
-	r.dWeights[deleteOpIndx] *= r.decay
-	r.dWeights[deleteOpIndx] += (1 - r.decay) * r.scores[outcome]
+func (s *RouletteWheel) Update(candidate State, deleteOpIndx int, repairOpIndx int, outcome Outcome) error {
+	s.dWeights[deleteOpIndx] *= s.decay
+	s.dWeights[deleteOpIndx] += (1 - s.decay) * s.scores[outcome]
 
-	r.rWeights[repairOpIndx] *= r.decay
-	r.rWeights[repairOpIndx] += (1 - r.decay) * r.scores[outcome]
+	s.rWeights[repairOpIndx] *= s.decay
+	s.rWeights[repairOpIndx] += (1 - s.decay) * s.scores[outcome]
 
 	return nil
 }

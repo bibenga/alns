@@ -1,6 +1,7 @@
 package alns
 
 import (
+	"cmp"
 	"math"
 	"math/rand/v2"
 	"testing"
@@ -13,10 +14,10 @@ func TestIsClose(t *testing.T) {
 	if a == b {
 		t.Errorf("a and should not be equal: %.18f == %.18f", a, b)
 	}
-	if !IsClose(a, b) {
+	if !IsClose(a, b, AbsoulteTolerance, RelativeTolerance) {
 		t.Errorf("a and b is not close: %.18f, %.18f", a, b)
 	}
-	if Compare(a, b) != 0 {
+	if CompareWithIsClose(a, b, AbsoulteTolerance, RelativeTolerance) != 0 {
 		t.Errorf("a and b is not close: %.18f, %.18f", a, b)
 	}
 
@@ -26,10 +27,10 @@ func TestIsClose(t *testing.T) {
 	if a == b {
 		t.Errorf("a and should not be equal: %.18f == %.18f", a, b)
 	}
-	if IsClose(a, b) {
+	if IsClose(a, b, AbsoulteTolerance, RelativeTolerance) {
 		t.Errorf("a and b is close: %.18f, %.18f, %.18f", a, b, permitedError)
 	}
-	if Compare(a, b) == 0 {
+	if CompareWithIsClose(a, b, AbsoulteTolerance, RelativeTolerance) == 0 {
 		t.Errorf("a and b is close: %.18f, %.18f, %.18f", a, b, permitedError)
 	}
 }
@@ -49,7 +50,7 @@ func TestWeightedRandomIndex(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			got := weightedRandomIndex(r, tt.weights)
+			got := weightedRandomIndex(cmp.Compare, r, tt.weights)
 			if got != tt.want {
 				t.Errorf("weights=%v: got %d, want %d", tt.weights, got, tt.want)
 			}
@@ -64,7 +65,7 @@ func TestWeightedRandomIndex(t *testing.T) {
 		counts := make([]int, len(weights))
 
 		for range total {
-			idx := weightedRandomIndex(r, weights)
+			idx := weightedRandomIndex(cmp.Compare, r, weights)
 			counts[idx]++
 		}
 
