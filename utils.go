@@ -39,7 +39,8 @@ func Compare(a, b float64) int {
 func IsClose(a, b float64) bool {
 	// return math.Abs(a-b) <= atol
 	// see https://numpy.org/doc/stable/reference/generated/numpy.isclose.html#numpy.isclose
-	return a == b || math.Abs(a-b) <= (AbsoulteTolerance+RelativeTolerance*math.Abs(b))
+	// https://docs.python.org/3/library/math.html#math.isclose
+	return a == b || math.Abs(a-b) <= (AbsoulteTolerance+RelativeTolerance*max(math.Abs(a), math.Abs(b)))
 }
 
 func sum(weights []float64) float64 {
