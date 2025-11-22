@@ -8,8 +8,8 @@ import (
 )
 
 var UseIsCloseComparison = true
-var RelativeTolerance float64 = 1e-12
-var AbsoulteTolerance float64 = 1e-12
+var RelativeTolerance float64 = 1e-12 // for numbers that can be of large order
+var AbsoulteTolerance float64 = 1e-12 // for numbers near zero
 
 func weightedRandomIndex(rnd *rand.Rand, weights []float64) int {
 	if len(weights) == 0 {
