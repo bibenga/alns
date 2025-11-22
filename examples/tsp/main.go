@@ -59,13 +59,9 @@ func main() {
 		Rnd:              rnd,
 		DestroyOperators: destroyOperators,
 		RepairOperators:  repairOperators,
-		Selector:         &sel,
-		Acceptor:         &accept,
-		Stop:             &stop,
-		InitialSolution:  initSol,
 	}
 
-	result, err := a.Iterate()
+	result, err := a.Iterate(initSol, &sel, &accept, &stop)
 	if err != nil {
 		panic(err)
 	}

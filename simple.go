@@ -30,10 +30,6 @@ func Iterate(
 		CollectObjectives: false,
 		DestroyOperators:  destroyOperators,
 		RepairOperators:   repairOperators,
-		Selector:          &selector,
-		Acceptor:          &acceptor,
-		Stop:              &stop,
-		InitialSolution:   initial,
 	}
-	return a.Iterate()
+	return a.Iterate(initial, &selector, &acceptor, &stop)
 }

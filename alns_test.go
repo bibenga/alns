@@ -30,39 +30,39 @@ func TestAlns(t *testing.T) {
 	}
 
 	lastBest := rand.Float64()
-	initialSolution := FakeState{objective: lastBest}
+	initSol := FakeState{objective: lastBest}
 
 	a := ALNS{
 		Rnd:               RuntimeRand,
 		CollectObjectives: true,
-		Selector:          &opSelect,
-		Acceptor:          &accept,
-		Stop:              &stop,
-		InitialSolution:   &initialSolution,
 	}
 
 	bestCount := 0
 	destroyCalled := 0
-	a.AddDestroyOperator(func(state State, rnd *rand.Rand) (State, error) {
-		destroyCalled++
-		current := state.(*FakeState)
-		destroyed := current.Clone()
-		return destroyed, nil
-	})
+	a.DestroyOperators = append(a.DestroyOperators,
+		func(state State, rnd *rand.Rand) (State, error) {
+			destroyCalled++
+			current := state.(*FakeState)
+			destroyed := current.Clone()
+			return destroyed, nil
+		},
+	)
 
 	repairCalled := 0
-	a.AddRepairOperator(func(state State, rnd *rand.Rand) (State, error) {
-		repairCalled++
-		current := state.(*FakeState)
-		current.objective = rand.Float64()
-		if current.objective < lastBest {
-			lastBest = current.objective
-			bestCount++
-		}
-		return current, nil
-	})
+	a.RepairOperators = append(a.RepairOperators,
+		func(state State, rnd *rand.Rand) (State, error) {
+			repairCalled++
+			current := state.(*FakeState)
+			current.objective = rand.Float64()
+			if current.objective < lastBest {
+				lastBest = current.objective
+				bestCount++
+			}
+			return current, nil
+		},
+	)
 
-	res, err := a.Iterate()
+	res, err := a.Iterate(&initSol, &opSelect, &accept, &stop)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,10 +95,8 @@ func TestAlnsCollectObjectives(t *testing.T) {
 	solve := func(collectObjectives bool) *Result {
 		opSelect, _ := NewRouletteWheel([4]float64{3, 2, 1, 0.5}, 0.8, 1, 1, nil)
 		accept := HillClimbing{}
-		stop := MaxIterations{
-			MaxIterations: 10,
-		}
-		initialSolution := FakeState{objective: 1}
+		stop := MaxIterations{MaxIterations: 10}
+		initSol := FakeState{objective: 1}
 		a := ALNS{
 			Rnd:               rand.New(rand.NewPCG(1, 2)),
 			CollectObjectives: collectObjectives,
@@ -108,12 +106,8 @@ func TestAlnsCollectObjectives(t *testing.T) {
 			RepairOperators: []Operator{
 				func(state State, rnd *rand.Rand) (State, error) { return state, nil },
 			},
-			Selector:        &opSelect,
-			Acceptor:        &accept,
-			Stop:            &stop,
-			InitialSolution: initialSolution,
 		}
-		res, err := a.Iterate()
+		res, err := a.Iterate(initSol, &opSelect, &accept, &stop)
 		if err != nil {
 			t.Fatal(err)
 		}
