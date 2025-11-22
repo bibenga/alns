@@ -251,6 +251,10 @@ func euclidean(x1, y1, x2, y2 float64) float64 {
 	return math.Sqrt(math.Pow(x2-x1, 2) + math.Pow(y2-y1, 2))
 }
 
+type Node int
+
+type Edge [2]Node
+
 type TspState struct {
 	nodes     []int
 	edges     map[int]int
@@ -279,10 +283,27 @@ func (s *TspState) Clone() *TspState {
 }
 
 func (s *TspState) Objective() float64 {
+	// Iteration over a map does not have a stable order :(
+
+	// if math.IsNaN(s.objective) {
+	// 	v := 0.0
+	// 	for from, to := range s.edges {
+	// 		v += s.dists[from][to]
+	// 	}
+	// 	s.objective = v
+	// }
+	// return s.objective
+
 	if math.IsNaN(s.objective) {
 		v := 0.0
-		for node := range s.edges {
-			v += s.dists[node][s.edges[node]]
+		from := 0
+		for {
+			to := s.edges[from]
+			if to == 0 {
+				break
+			}
+			v += s.dists[from][to]
+			from = to
 		}
 		s.objective = v
 	}
@@ -352,7 +373,11 @@ func wouldFormSubcycle(fromNode, toNode int, state *TspState) bool {
 const DegreeOfDestruction = 0.1
 
 func edgesToRemove(state *TspState) int {
-	return int(float64(len(state.edges)) * DegreeOfDestruction)
+	n := int(float64(len(state.edges)) * DegreeOfDestruction)
+	if n == 0 {
+		return 1
+	}
+	return n
 }
 
 func randomRemoval(state alns.State, rnd *rand.Rand) (alns.State, error) {
