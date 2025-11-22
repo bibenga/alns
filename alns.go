@@ -10,8 +10,8 @@ type Listener func(outcome Outcome, cand State) error
 type CompareFunc func(a, b float64) int
 
 type ALNS struct {
-	Rnd               *rand.Rand
 	Compare           CompareFunc
+	Rnd               *rand.Rand
 	CollectObjectives bool
 	Listener          Listener
 	DestroyOperators  []Operator
