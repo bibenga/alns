@@ -73,7 +73,10 @@ func TestNoImprovement(t *testing.T) {
 	})
 
 	t.Run("SimulatedDecrease", func(t *testing.T) {
-		stop := NoImprovement{MaxIterations: 10}
+		stop := NoImprovement{
+			Compare:       cmp.Compare[float64],
+			MaxIterations: 10,
+		}
 		best := FakeState{objective: 100}
 		curr := FakeState{objective: 100}
 		i := 0
