@@ -18,8 +18,8 @@ func newStatistics(numIterations int, numDestroy, numRepair int) Statistics {
 	var runtimes []time.Duration
 	var objectives []float64
 	if numIterations > 0 {
-		runtimes = make([]time.Duration, 0, numIterations)
-		objectives = make([]float64, 0, numIterations)
+		runtimes = make([]time.Duration, 0, numIterations+1)
+		objectives = make([]float64, 0, numIterations+1)
 	}
 	return Statistics{
 		Runtimes:              runtimes,
