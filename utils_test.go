@@ -1,6 +1,8 @@
 package alns
 
 import (
+	"fmt"
+	"math"
 	"math/rand/v2"
 	"testing"
 )
@@ -15,6 +17,18 @@ func TestIsClose(t *testing.T) {
 	}
 	if Compare(a, b) != 0 {
 		t.Errorf("a and b is not close: %.18f, %.18f", a, b)
+	}
+
+	a, b = 100000.100001, 100000.1
+	if a == b {
+		t.Errorf("a and should not be equal: %.18f == %.18f", a, b)
+	}
+	fmt.Printf("err: %v\n", (AbsoulteTolerance + RelativeTolerance*math.Abs(b)))
+	if IsClose(a, b) {
+		t.Errorf("a and b is close: %.18f, %.18f", a, b)
+	}
+	if Compare(a, b) == 0 {
+		t.Errorf("a and b is close: %.18f, %.18f", a, b)
 	}
 }
 
