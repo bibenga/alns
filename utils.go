@@ -1,12 +1,15 @@
 package alns
 
 import (
+	"cmp"
 	"fmt"
 	"math"
 	"math/rand/v2"
 )
 
-const absTol = 1e-08
+var UseIsCloseComparison = true
+var RelativeTolerance = 1e-05
+var AbsoulteTolerance = 1e-08
 
 func weightedRandomIndex(rnd *rand.Rand, weights []float64) int {
 	if len(weights) == 0 {
@@ -19,25 +22,27 @@ func weightedRandomIndex(rnd *rand.Rand, weights []float64) int {
 	value := rnd.Float64() * sum // adjusted value
 	for i, weight := range weights {
 		value -= weight
-		if value <= 0 || isClose(value, 0) {
+		if Compare(value, 0) <= 0 {
 			return i
 		}
 	}
 	panic(fmt.Sprintf("arithmetic error: sum=%f, value=%f, weights=%v", sum, value, weights))
 }
 
-func isClose(a, b float64) bool {
-	return isCloseTol(a, b, absTol)
+func Compare(a, b float64) int {
+	if UseIsCloseComparison && IsClose(a, b) {
+		return 0
+	}
+	return cmp.Compare(a, b)
 }
 
-func isCloseTol(a, b, tol float64) bool {
-	return math.Abs(a-b) <= tol
+func IsClose(a, b float64) bool {
+	// return math.Abs(a-b) <= atol
+	// see https://numpy.org/doc/stable/reference/generated/numpy.isclose.html#numpy.isclose
+	return a == b || math.Abs(a-b) <= (AbsoulteTolerance+RelativeTolerance*math.Abs(b))
 }
 
 func sum(weights []float64) float64 {
-	if len(weights) == 1 {
-		return weights[0]
-	}
 	sum := 0.0
 	for _, w := range weights {
 		sum += w

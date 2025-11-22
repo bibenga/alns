@@ -129,12 +129,12 @@ func (a *ALNS) determineOutcome(best, curr, cand State) (Outcome, error) {
 		// accept candidate
 		outcome = Accept
 
-		if cand.Objective() < curr.Objective() {
+		if Compare(cand.Objective(), curr.Objective()) < 0 {
 			outcome = Better
 		}
 	}
 
-	if cand.Objective() < best.Objective() {
+	if Compare(cand.Objective(), best.Objective()) < 0 {
 		// candidate is new best
 		outcome = Best
 	}

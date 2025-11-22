@@ -14,5 +14,5 @@ type HillClimbing struct {
 var _ AcceptanceCriterion = &HillClimbing{}
 
 func (h *HillClimbing) Accept(rnd *rand.Rand, best, current, candidate State) (bool, error) {
-	return candidate.Objective() <= current.Objective(), nil
+	return Compare(candidate.Objective(), current.Objective()) <= 0, nil
 }

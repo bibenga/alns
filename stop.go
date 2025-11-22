@@ -47,7 +47,7 @@ type NoImprovement struct {
 var _ StoppingCriterion = &NoImprovement{}
 
 func (ni *NoImprovement) IsDone(rnd *rand.Rand, best, current State) (bool, error) {
-	if !ni.isInitialized || best.Objective() < ni.target {
+	if !ni.isInitialized || Compare(best.Objective(), ni.target) < 0 {
 		ni.isInitialized = true
 		ni.target = best.Objective()
 		ni.counter = 0
