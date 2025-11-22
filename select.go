@@ -12,7 +12,6 @@ type OperatorSelectionScheme interface {
 
 // The `RouletteWheel` scheme updates operator weights as a convex combination of the current weight, and the new score.
 type RouletteWheel struct {
-	compare         CompareFunc
 	scores          [4]float64 // representing the weight updates when the candidate solution results in a new global
 	decay           float64    // operator decay parameter :math:`\theta \in [0, 1]`
 	numDestroy      int        // number of destroy operators
@@ -27,7 +26,6 @@ type RouletteWheel struct {
 var _ OperatorSelectionScheme = &RouletteWheel{}
 
 func NewRouletteWheel(
-	compare CompareFunc,
 	scores [4]float64,
 	decay float64,
 	numDestroy int,
@@ -35,7 +33,6 @@ func NewRouletteWheel(
 	opCoupling [][]bool,
 ) (RouletteWheel, error) {
 	r := RouletteWheel{
-		compare:    compare,
 		scores:     scores,
 		decay:      decay,
 		numDestroy: numDestroy,
@@ -107,7 +104,7 @@ func (s *RouletteWheel) validate() error {
 func (s *RouletteWheel) Select(rnd *rand.Rand, best State, current State) (int, int, error) {
 	if s.opCoupling != nil {
 		// select destroy operator
-		dIdx := weightedRandomIndex(s.compare, rnd, s.dWeights)
+		dIdx := weightedRandomIndex(rnd, s.dWeights)
 
 		// extract coupled repair indeces and their weight for selected destroy operator
 		s.coupledRIdcs = s.coupledRIdcs[:0]
@@ -120,12 +117,12 @@ func (s *RouletteWheel) Select(rnd *rand.Rand, best State, current State) (int, 
 		}
 
 		// select repair operator
-		rIdx := s.coupledRIdcs[weightedRandomIndex(s.compare, rnd, s.coupledRWeights)]
+		rIdx := s.coupledRIdcs[weightedRandomIndex(rnd, s.coupledRWeights)]
 
 		return dIdx, rIdx, nil
 	} else {
-		dIdx := weightedRandomIndex(s.compare, rnd, s.dWeights)
-		rIdx := weightedRandomIndex(s.compare, rnd, s.rWeights)
+		dIdx := weightedRandomIndex(rnd, s.dWeights)
+		rIdx := weightedRandomIndex(rnd, s.rWeights)
 		return dIdx, rIdx, nil
 	}
 }

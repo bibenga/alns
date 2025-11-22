@@ -41,12 +41,7 @@ func main() {
 	repairOperatorNames := []string{"greedyRepair"}
 	repairOperators := []alns.Operator{greedyRepair}
 
-	compare := func(a, b float64) int {
-		return alns.CompareWithIsClose(a, b, alns.AbsoulteTolerance, alns.RelativeTolerance)
-	}
-
 	sel, err := alns.NewRouletteWheel(
-		compare,
 		[4]float64{3, 2, 1, 0.5},
 		0.8,
 		len(destroyOperators),
@@ -56,22 +51,18 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	accept := alns.HillClimbing{
-		Compare: compare,
-	}
+	accept := alns.HillClimbing{}
 	// stop := alns.MaxRuntime{MaxRuntime: 2 * time.Second}
 	stop := alns.MaxIterations{MaxIterations: 2000}
 
 	a := alns.ALNS{
-		Compare:           compare,
-		Rnd:               rnd,
-		CollectObjectives: false,
-		DestroyOperators:  destroyOperators,
-		RepairOperators:   repairOperators,
-		Selector:          &sel,
-		Acceptor:          &accept,
-		Stop:              &stop,
-		InitialSolution:   initSol,
+		Rnd:              rnd,
+		DestroyOperators: destroyOperators,
+		RepairOperators:  repairOperators,
+		Selector:         &sel,
+		Acceptor:         &accept,
+		Stop:             &stop,
+		InitialSolution:  initSol,
 	}
 
 	result, err := a.Iterate()

@@ -7,10 +7,7 @@ import (
 
 type Listener func(outcome Outcome, cand State) error
 
-type CompareFunc func(a, b float64) int
-
 type ALNS struct {
-	Compare           CompareFunc
 	Rnd               *rand.Rand
 	CollectObjectives bool
 	Listener          Listener
@@ -31,6 +28,7 @@ func (a *ALNS) AddRepairOperator(ops ...Operator) {
 	a.RepairOperators = append(a.RepairOperators, ops...)
 }
 
+// def iterate(initial_solution, select, accept, stop)
 func (a *ALNS) Iterate() (*Result, error) {
 	if len(a.DestroyOperators) == 0 || len(a.RepairOperators) == 0 {
 		panic("Missing destroy or repair operators.")
@@ -132,12 +130,12 @@ func (a *ALNS) determineOutcome(best, curr, cand State) (Outcome, error) {
 		// accept candidate
 		outcome = Accept
 
-		if a.Compare(cand.Objective(), curr.Objective()) < 0 {
+		if cand.Objective() < curr.Objective() {
 			outcome = Better
 		}
 	}
 
-	if a.Compare(cand.Objective(), best.Objective()) < 0 {
+	if cand.Objective() < best.Objective() {
 		// candidate is new best
 		outcome = Best
 	}

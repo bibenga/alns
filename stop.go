@@ -50,7 +50,6 @@ func (s *MaxRuntime) IsDone(rnd *rand.Rand, best, current State) (bool, error) {
 }
 
 type NoImprovement struct {
-	Compare       CompareFunc
 	MaxIterations int
 	counter       int
 	isInitialized bool
@@ -59,15 +58,14 @@ type NoImprovement struct {
 
 var _ StoppingCriterion = &NoImprovement{}
 
-func NewNoImprovement(compare CompareFunc, maxIterations int) NoImprovement {
+func NewNoImprovement(maxIterations int) NoImprovement {
 	return NoImprovement{
-		Compare:       compare,
 		MaxIterations: maxIterations,
 	}
 }
 
 func (s *NoImprovement) IsDone(rnd *rand.Rand, best, current State) (bool, error) {
-	if !s.isInitialized || s.Compare(best.Objective(), s.target) < 0 {
+	if !s.isInitialized || best.Objective() < s.target {
 		s.isInitialized = true
 		s.target = best.Objective()
 		s.counter = 0

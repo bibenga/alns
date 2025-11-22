@@ -1,14 +1,11 @@
 package alns
 
 import (
-	"cmp"
 	"testing"
 )
 
 func TestHillClimbing(t *testing.T) {
-	accept := HillClimbing{
-		Compare: cmp.Compare[float64],
-	}
+	accept := HillClimbing{}
 
 	best := FakeState{objective: 2}
 	curr := FakeState{objective: 2.1}

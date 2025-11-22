@@ -1,7 +1,6 @@
 package alns
 
 import (
-	"cmp"
 	"math/rand/v2"
 	"testing"
 )
@@ -21,13 +20,11 @@ func (s FakeState) Objective() float64 {
 func TestAlns(t *testing.T) {
 	const total = 10000
 
-	opSelect, err := NewRouletteWheel(cmp.Compare, [4]float64{3, 2, 1, 0.5}, 0.8, 1, 1, nil)
+	opSelect, err := NewRouletteWheel([4]float64{3, 2, 1, 0.5}, 0.8, 1, 1, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	accept := HillClimbing{
-		Compare: cmp.Compare[float64],
-	}
+	accept := HillClimbing{}
 	stop := MaxIterations{
 		MaxIterations: total,
 	}
@@ -36,7 +33,6 @@ func TestAlns(t *testing.T) {
 	initialSolution := FakeState{objective: lastBest}
 
 	a := ALNS{
-		Compare:           cmp.Compare[float64],
 		Rnd:               RuntimeRand,
 		CollectObjectives: true,
 		Selector:          &opSelect,
@@ -97,16 +93,13 @@ func TestAlns(t *testing.T) {
 
 func TestAlnsCollectObjectives(t *testing.T) {
 	solve := func(collectObjectives bool) *Result {
-		opSelect, _ := NewRouletteWheel(cmp.Compare, [4]float64{3, 2, 1, 0.5}, 0.8, 1, 1, nil)
-		accept := HillClimbing{
-			Compare: cmp.Compare[float64],
-		}
+		opSelect, _ := NewRouletteWheel([4]float64{3, 2, 1, 0.5}, 0.8, 1, 1, nil)
+		accept := HillClimbing{}
 		stop := MaxIterations{
 			MaxIterations: 10,
 		}
 		initialSolution := FakeState{objective: 1}
 		a := ALNS{
-			Compare:           cmp.Compare[float64],
 			Rnd:               rand.New(rand.NewPCG(1, 2)),
 			CollectObjectives: collectObjectives,
 			DestroyOperators: []Operator{

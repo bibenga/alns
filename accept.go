@@ -9,17 +9,14 @@ type AcceptanceCriterion interface {
 }
 
 type HillClimbing struct {
-	Compare CompareFunc
 }
 
 var _ AcceptanceCriterion = &HillClimbing{}
 
-func NewHillClimbing(compare CompareFunc) HillClimbing {
-	return HillClimbing{
-		Compare: compare,
-	}
+func NewHillClimbing() HillClimbing {
+	return HillClimbing{}
 }
 
 func (a *HillClimbing) Accept(rnd *rand.Rand, best, current, candidate State) (bool, error) {
-	return a.Compare(candidate.Objective(), current.Objective()) <= 0, nil
+	return candidate.Objective() <= current.Objective(), nil
 }
