@@ -8,7 +8,6 @@ import (
 	"math/rand/v2"
 	"os"
 	"slices"
-	"time"
 
 	"github.com/bibenga/alns"
 )
@@ -23,8 +22,8 @@ func main() {
 		nodes[i] = i
 	}
 
-	// rnd := rand.New(rand.NewPCG(1, 2))
-	rnd := alns.RuntimeRand
+	rnd := rand.New(rand.NewPCG(12, 34))
+	// rnd := alns.RuntimeRand
 
 	// var initSol alns.State
 	initSol := NewTspState(nodes, map[int]int{}, dists)
@@ -53,7 +52,8 @@ func main() {
 		panic(err)
 	}
 	accept := alns.HillClimbing{}
-	stop := alns.MaxRuntime{MaxRuntime: 1 * time.Second}
+	// stop := alns.MaxRuntime{MaxRuntime: 2 * time.Second}
+	stop := alns.MaxIterations{MaxIterations: 2000}
 
 	a := alns.ALNS{
 		Rnd:               rnd,
@@ -66,31 +66,12 @@ func main() {
 		InitialSolution:   initSol,
 	}
 
-	// print progress
-	started := time.Now()
-	prevLoggedPercent := 0
-	lastBestOutcome := initSol.Objective()
-	a.Listener = func(outcome alns.Outcome, cand alns.State) error {
-		if outcome == alns.Best {
-			lastBestOutcome = cand.Objective()
-		}
-		elapsed := time.Since(started)
-		percent := int(min(elapsed.Seconds()/stop.MaxRuntime.Seconds(), 1) * 10)
-		if percent > prevLoggedPercent {
-			prevLoggedPercent = percent
-			fmt.Printf("\rprogress: %3d%%; lastBest: %.4f", percent*10, lastBestOutcome)
-		}
-		return nil
-	}
 	result, err := a.Iterate()
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("") // after progress we should make a new line because we use "\r"
-
 	// print result
-	// result := &a.Result
 	statistics := &result.Statistics
 	best := result.BestState.(*TspState)
 
@@ -271,41 +252,50 @@ func euclidean(x1, y1, x2, y2 float64) float64 {
 }
 
 type TspState struct {
-	nodes []int
-	edges map[int]int
-	dists [][]float64
+	nodes     []int
+	edges     map[int]int
+	dists     [][]float64
+	objective float64
 }
 
 var _ alns.State = &TspState{}
 
 func NewTspState(nodes []int, edges map[int]int, dists [][]float64) *TspState {
 	return &TspState{
-		nodes: nodes,
-		edges: edges,
-		dists: dists,
+		nodes:     nodes,
+		edges:     edges,
+		dists:     dists,
+		objective: math.NaN(),
 	}
 }
 
 func (s *TspState) Clone() *TspState {
 	return &TspState{
-		nodes: s.nodes,
-		edges: maps.Clone(s.edges),
-		dists: s.dists,
+		nodes:     s.nodes,
+		edges:     maps.Clone(s.edges),
+		dists:     s.dists,
+		objective: math.NaN(),
 	}
 }
 
 func (s *TspState) Objective() float64 {
-	v := 0.0
-	for node := range s.edges {
-		v += s.dists[node][s.edges[node]]
+	if math.IsNaN(s.objective) {
+		v := 0.0
+		for node := range s.edges {
+			v += s.dists[node][s.edges[node]]
+		}
+		s.objective = v
 	}
-	return v
+	return s.objective
 }
 
 func greedyRepair(state alns.State, rnd *rand.Rand) (alns.State, error) {
 	current := state.(*TspState)
 
-	visited := slices.Collect(maps.Values(current.edges))
+	visited := make(map[int]bool, len(current.nodes))
+	for _, v := range current.edges {
+		visited[v] = true
+	}
 
 	shuffledIndices := rnd.Perm(len(current.nodes))
 	nodes := make([]int, len(shuffledIndices))
@@ -327,7 +317,7 @@ func greedyRepair(state alns.State, rnd *rand.Rand) (alns.State, error) {
 
 		var unvisited []int
 		for _, other := range current.nodes {
-			if other != node && !slices.Contains(visited, other) && !wouldFormSubcycle(node, other, current) {
+			if other != node && !visited[other] && !wouldFormSubcycle(node, other, current) {
 				unvisited = append(unvisited, other)
 			}
 		}
@@ -340,7 +330,7 @@ func greedyRepair(state alns.State, rnd *rand.Rand) (alns.State, error) {
 		})
 
 		current.edges[node] = nearest
-		visited = append(visited, nearest)
+		visited[nearest] = true
 	}
 
 	return state, nil
