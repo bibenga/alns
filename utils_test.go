@@ -5,6 +5,19 @@ import (
 	"testing"
 )
 
+func TestIsClose(t *testing.T) {
+	a, b := 1.1000000000001, 1.1
+	if a == b {
+		t.Errorf("a and should not be equal: %.18f == %.18f", a, b)
+	}
+	if !IsClose(a, b) {
+		t.Errorf("a and b is not close: %.18f, %.18f", a, b)
+	}
+	if Compare(a, b) != 0 {
+		t.Errorf("a and b is not close: %.18f, %.18f", a, b)
+	}
+}
+
 func TestWeightedRandomIndex(t *testing.T) {
 	t.Run("Simple", func(t *testing.T) {
 		r := rand.New(rand.NewPCG(1, 3))
