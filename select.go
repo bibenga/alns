@@ -33,15 +33,17 @@ func NewRouletteWheel(
 	opCoupling [][]bool,
 ) (RouletteWheel, error) {
 	r := RouletteWheel{
-		scores:          scores,
-		decay:           decay,
-		numDestroy:      numDestroy,
-		numRepair:       numRepair,
-		opCoupling:      opCoupling,
-		dWeights:        make([]float64, numDestroy),
-		rWeights:        make([]float64, numRepair),
-		coupledRIdcs:    make([]int, 0, numRepair),
-		coupledRWeights: make([]float64, 0, numRepair),
+		scores:     scores,
+		decay:      decay,
+		numDestroy: numDestroy,
+		numRepair:  numRepair,
+		opCoupling: opCoupling,
+		dWeights:   make([]float64, numDestroy),
+		rWeights:   make([]float64, numRepair),
+	}
+	if opCoupling != nil {
+		r.coupledRIdcs = make([]int, 0, numRepair)
+		r.coupledRWeights = make([]float64, 0, numRepair)
 	}
 	for i := range numDestroy {
 		r.dWeights[i] = 1
