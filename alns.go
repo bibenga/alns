@@ -18,8 +18,8 @@ type ALNS struct {
 // def iterate(initial_solution, select, accept, stop)
 func (a *ALNS) Iterate(
 	initSol State,
-	selector OperatorSelectionScheme,
-	acceptor AcceptanceCriterion,
+	selectOp OperatorSelectionScheme,
+	accept AcceptanceCriterion,
 	stop StoppingCriterion,
 ) (*Result, error) {
 	if len(a.DestroyOperators) == 0 || len(a.RepairOperators) == 0 {
@@ -48,7 +48,7 @@ func (a *ALNS) Iterate(
 		} else if done {
 			break
 		}
-		dIdx, rIdx, err := selector.Select(a.Rnd, best, curr)
+		dIdx, rIdx, err := selectOp.Select(a.Rnd, best, curr)
 		if err != nil {
 			return nil, err
 		}
@@ -65,12 +65,12 @@ func (a *ALNS) Iterate(
 		}
 
 		var outcome Outcome
-		best, curr, outcome, err = a.evalCand(acceptor, best, curr, cand)
+		best, curr, outcome, err = a.evalCand(accept, best, curr, cand)
 		if err != nil {
 			return nil, err
 		}
 
-		err = selector.Update(cand, dIdx, rIdx, outcome)
+		err = selectOp.Update(cand, dIdx, rIdx, outcome)
 		if err != nil {
 			return nil, err
 		}
@@ -90,8 +90,8 @@ func (a *ALNS) Iterate(
 	return &result, nil
 }
 
-func (a *ALNS) evalCand(acceptor AcceptanceCriterion, best, curr, cand State) (State, State, Outcome, error) {
-	outcome, err := a.determineOutcome(acceptor, best, curr, cand)
+func (a *ALNS) evalCand(accept AcceptanceCriterion, best, curr, cand State) (State, State, Outcome, error) {
+	outcome, err := a.determineOutcome(accept, best, curr, cand)
 	if err != nil {
 		return nil, nil, 0, err
 	}
@@ -112,10 +112,10 @@ func (a *ALNS) evalCand(acceptor AcceptanceCriterion, best, curr, cand State) (S
 	}
 }
 
-func (a *ALNS) determineOutcome(acceptor AcceptanceCriterion, best, curr, cand State) (Outcome, error) {
+func (a *ALNS) determineOutcome(accept AcceptanceCriterion, best, curr, cand State) (Outcome, error) {
 	outcome := Reject
 
-	if accepted, err := acceptor.Accept(a.Rnd, best, curr, cand); err != nil {
+	if accepted, err := accept.Accept(a.Rnd, best, curr, cand); err != nil {
 		return 0, err
 	} else if accepted {
 		// accept candidate
