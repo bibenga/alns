@@ -1,7 +1,6 @@
 package alns
 
 import (
-	"cmp"
 	"fmt"
 	"math/rand/v2"
 )
@@ -36,7 +35,7 @@ func NewRouletteWheel(
 	opCoupling [][]bool,
 ) (RouletteWheel, error) {
 	r := RouletteWheel{
-		compare:    cmp.Compare[float64],
+		compare:    compare,
 		scores:     scores,
 		decay:      decay,
 		numDestroy: numDestroy,
