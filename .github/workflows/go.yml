@@ -21,7 +21,7 @@ jobs:
       - name: Set up Go ${{ matrix.go-version }}
         uses: actions/setup-go@v4
         with:
-          go-version: ${{ matrix.go-version }} # укажите вашу версию Go
+          go-version: ${{ matrix.go-version }}
   
       - name: Install dependencies
         run: go mod tidy
