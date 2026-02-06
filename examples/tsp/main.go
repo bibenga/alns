@@ -246,10 +246,6 @@ func euclidean(x1, y1, x2, y2 float64) float64 {
 	return math.Sqrt(math.Pow(x2-x1, 2) + math.Pow(y2-y1, 2))
 }
 
-type Node int
-
-type Edge [2]Node
-
 type TspState struct {
 	nodes     []int
 	edges     map[int]int
