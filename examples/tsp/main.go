@@ -67,27 +67,27 @@ func main() {
 	}
 
 	// print result
-	statistics := &result.Statistics
+	stat := &result.Statistics
 	best := result.BestState.(*TspState)
 
 	fmt.Printf("best solution: %.4f\n", best.Objective())
 
 	fmt.Printf("statistics: IterationCount=%d; TotalRuntime=%s\n",
-		statistics.IterationCount,
-		statistics.TotalRuntime,
+		stat.IterationCount,
+		stat.TotalRuntime,
 	)
 	fmt.Println("  destroy operators")
 	for i, name := range destroyOperatorNames {
-		fmt.Printf("    %d: %14s; %s\n", i, name, statistics.DestroyOperatorCounts[i])
+		fmt.Printf("    %d: %14s; %s\n", i, name, stat.DestroyOperatorCounts[i])
 	}
 	fmt.Println("  repair operators")
 	for i, name := range repairOperatorNames {
-		fmt.Printf("    %d: %14s; %s\n", i, name, statistics.RepairOperatorCounts[i])
+		fmt.Printf("    %d: %14s; %s\n", i, name, stat.RepairOperatorCounts[i])
 	}
-	if len(statistics.Objectives) > 0 {
+	if len(stat.Objectives) > 0 {
 		fmt.Println("objectives")
-		for i, objective := range statistics.Objectives {
-			elapsed := statistics.Runtimes[i]
+		for i, objective := range stat.Objectives {
+			elapsed := stat.Runtimes[i]
 			fmt.Printf("%4d: %12s - %.4f\n", i, elapsed, objective)
 		}
 	} else {
@@ -354,12 +354,14 @@ func greedyRepair(state alns.State, rnd *rand.Rand) (alns.State, error) {
 
 func wouldFormSubcycle(fromNode, toNode int, state *TspState) bool {
 	for step := 1; step < len(state.nodes); step++ {
-		if _, ok := state.edges[toNode]; !ok {
+		if toNodeTmp, ok := state.edges[toNode]; !ok {
 			return false
-		}
-		toNode = state.edges[toNode]
-		if fromNode == toNode && step != len(state.nodes)-1 {
-			return true
+		} else {
+			// toNode = state.edges[toNode]
+			toNode = toNodeTmp
+			if fromNode == toNode && step != len(state.nodes)-1 {
+				return true
+			}
 		}
 	}
 	return false
