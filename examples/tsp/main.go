@@ -4,7 +4,6 @@ import (
 	"cmp"
 	"flag"
 	"fmt"
-	"maps"
 	"math"
 	"math/rand/v2"
 	"os"
@@ -42,15 +41,17 @@ func main() {
 
 	dists := dists(Coords)
 	nodes := make([]int, len(Coords))
+	edges := make([]int, len(Coords))
 	for i := range len(Coords) {
 		nodes[i] = i
+		edges[i] = -1
 	}
 
 	rnd := rand.New(rand.NewPCG(12, 34))
 	// rnd := alns.RuntimeRand
 
 	// var initSol alns.State
-	initSol := NewTspState(nodes, map[int]int{}, dists)
+	initSol := NewTspState(nodes, edges, dists)
 	if initSolG, err := greedyRepair(initSol, rnd); err != nil {
 		panic(err)
 	} else {
@@ -254,6 +255,8 @@ var Coords = [][2]float64{
 	{84, 6},
 	{107, 27},
 }
+var TotalNodes = len(Coords)
+var MinNode, MaxNode = 0, TotalNodes - 1
 
 func dists(coords [][2]float64) [][]float64 {
 	dist := make([][]float64, len(coords))
@@ -272,17 +275,25 @@ func euclidean(x1, y1, x2, y2 float64) float64 {
 
 type TspState struct {
 	nodes     []int
-	edges     map[int]int
+	edges     []int
+	edgesLen  int
 	dists     [][]float64
 	objective float64
 }
 
 var _ alns.State = &TspState{}
 
-func NewTspState(nodes []int, edges map[int]int, dists [][]float64) *TspState {
+func NewTspState(nodes []int, edges []int, dists [][]float64) *TspState {
+	edgesLen := 0
+	for _, nodeTo := range edges {
+		if nodeTo != -1 {
+			edgesLen++
+		}
+	}
 	return &TspState{
 		nodes:     nodes,
 		edges:     edges,
+		edgesLen:  edgesLen,
 		dists:     dists,
 		objective: math.NaN(),
 	}
@@ -291,24 +302,14 @@ func NewTspState(nodes []int, edges map[int]int, dists [][]float64) *TspState {
 func (s *TspState) Clone() *TspState {
 	return &TspState{
 		nodes:     s.nodes,
-		edges:     maps.Clone(s.edges),
+		edges:     slices.Clone(s.edges),
+		edgesLen:  s.edgesLen,
 		dists:     s.dists,
 		objective: math.NaN(),
 	}
 }
 
 func (s *TspState) Objective() float64 {
-	// Iteration over a map does not have a stable order :(
-
-	// if math.IsNaN(s.objective) {
-	// 	v := 0.0
-	// 	for from, to := range s.edges {
-	// 		v += s.dists[from][to]
-	// 	}
-	// 	s.objective = v
-	// }
-	// return s.objective
-
 	if math.IsNaN(s.objective) {
 		v := 0.0
 		from := 0
@@ -329,8 +330,10 @@ func greedyRepair(state alns.State, rnd *rand.Rand) (alns.State, error) {
 	current := state.(*TspState)
 
 	visited := make([]bool, len(current.nodes))
-	for _, v := range current.edges {
-		visited[v] = true
+	for _, nodeTo := range current.edges {
+		if nodeTo != -1 {
+			visited[nodeTo] = true
+		}
 	}
 
 	shuffledIndices := rnd.Perm(len(current.nodes))
@@ -339,10 +342,10 @@ func greedyRepair(state alns.State, rnd *rand.Rand) (alns.State, error) {
 		nodes[i] = current.nodes[ni]
 	}
 
-	for len(current.edges) != len(current.nodes) {
+	for current.edgesLen != len(current.nodes) {
 		var node = -1
 		for _, other := range nodes {
-			if _, ok := current.edges[other]; !ok {
+			if otherTo := current.edges[other]; otherTo == -1 {
 				node = other
 				break
 			}
@@ -366,6 +369,7 @@ func greedyRepair(state alns.State, rnd *rand.Rand) (alns.State, error) {
 		})
 
 		current.edges[node] = nearest
+		current.edgesLen++
 		visited[nearest] = true
 	}
 
@@ -374,7 +378,7 @@ func greedyRepair(state alns.State, rnd *rand.Rand) (alns.State, error) {
 
 func wouldFormSubcycle(fromNode, toNode int, state *TspState) bool {
 	for step := 1; step < len(state.nodes); step++ {
-		if toNodeTmp, ok := state.edges[toNode]; !ok {
+		if toNodeTmp := state.edges[toNode]; toNodeTmp == -1 {
 			return false
 		} else {
 			// toNode = state.edges[toNode]
@@ -406,9 +410,10 @@ func randomRemoval(state alns.State, rnd *rand.Rand) (alns.State, error) {
 	for removed != toRemove {
 		idx := rnd.IntN(len(destroyed.nodes))
 		node := destroyed.nodes[idx]
-		if _, ok := destroyed.edges[node]; ok {
+		if nodeTo := destroyed.edges[node]; nodeTo != -1 {
 			removed++
-			delete(destroyed.edges, node)
+			destroyed.edges[node] = -1
+			destroyed.edgesLen--
 		}
 	}
 
@@ -425,7 +430,8 @@ func pathRemoval(state alns.State, rnd *rand.Rand) (alns.State, error) {
 
 	for range toRemove {
 		nextNode := destroyed.edges[node]
-		delete(destroyed.edges, node)
+		destroyed.edges[node] = -1
+		destroyed.edgesLen--
 		node = nextNode
 	}
 
@@ -445,13 +451,14 @@ func worstRemoval(state alns.State, rnd *rand.Rand) (alns.State, error) {
 
 	toRemove := edgesToRemove(destroyed)
 	for idx := range toRemove {
-		delete(destroyed.edges, worstEdges[len(worstEdges)-(idx+1)])
+		destroyed.edges[worstEdges[len(worstEdges)-(idx+1)]] = -1
+		destroyed.edgesLen--
 	}
 
 	return destroyed, nil
 }
 
-func writeDotFile(filename string, nodes [][2]float64, edges map[int]int) {
+func writeDotFile(filename string, nodes [][2]float64, edges []int) {
 	// scale up
 	const k = 3
 	nodes = slices.Clone(nodes)
