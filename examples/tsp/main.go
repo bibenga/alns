@@ -328,7 +328,7 @@ func (s *TspState) Objective() float64 {
 func greedyRepair(state alns.State, rnd *rand.Rand) (alns.State, error) {
 	current := state.(*TspState)
 
-	visited := make(map[int]bool, len(current.nodes))
+	visited := make([]bool, len(current.nodes))
 	for _, v := range current.edges {
 		visited[v] = true
 	}
