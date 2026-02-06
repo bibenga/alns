@@ -2,11 +2,13 @@ package main
 
 import (
 	"cmp"
+	"flag"
 	"fmt"
 	"maps"
 	"math"
 	"math/rand/v2"
 	"os"
+	"runtime/pprof"
 	"slices"
 
 	"github.com/bibenga/alns"
@@ -15,6 +17,28 @@ import (
 func main() {
 	// https://alns.readthedocs.io/en/latest/examples/travelling_salesman_problem.html
 	// go run examples/tsp/main.go && neato -Tpng examples/tsp/tsp.dot -o examples/tsp/tsp.png
+
+	var cpuProfile bool
+
+	flag.BoolVar(&cpuProfile, "cpu", false, "enable cpu profile")
+
+	flag.Parse()
+
+	if cpuProfile {
+		// go run examples/tsp/main.go -cpu
+		// go tool pprof examples/tsp/cpuProfile.pprof
+		// png
+		cpuProfileFileName := "examples/tsp/cpuProfile.pprof"
+		cpuProfileFile, err := os.Create(cpuProfileFileName)
+		if err != nil {
+			panic(err)
+		}
+		defer cpuProfileFile.Close()
+		if err := pprof.StartCPUProfile(cpuProfileFile); err != nil {
+			panic(err)
+		}
+		defer pprof.StopCPUProfile()
+	}
 
 	dists := dists(Coords)
 	nodes := make([]int, len(Coords))
