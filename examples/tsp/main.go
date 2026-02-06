@@ -276,7 +276,7 @@ func euclidean(x1, y1, x2, y2 float64) float64 {
 type TspState struct {
 	nodes     []int
 	edges     []int
-	edgesLen  int
+	edgesCnt  int
 	dists     [][]float64
 	objective float64
 }
@@ -293,7 +293,7 @@ func NewTspState(nodes []int, edges []int, dists [][]float64) *TspState {
 	return &TspState{
 		nodes:     nodes,
 		edges:     edges,
-		edgesLen:  edgesLen,
+		edgesCnt:  edgesLen,
 		dists:     dists,
 		objective: math.NaN(),
 	}
@@ -303,7 +303,7 @@ func (s *TspState) Clone() *TspState {
 	return &TspState{
 		nodes:     s.nodes,
 		edges:     slices.Clone(s.edges),
-		edgesLen:  s.edgesLen,
+		edgesCnt:  s.edgesCnt,
 		dists:     s.dists,
 		objective: math.NaN(),
 	}
@@ -342,7 +342,7 @@ func greedyRepair(state alns.State, rnd *rand.Rand) (alns.State, error) {
 		nodes[i] = current.nodes[ni]
 	}
 
-	for current.edgesLen != len(current.nodes) {
+	for current.edgesCnt != len(current.nodes) {
 		var node = -1
 		for _, other := range nodes {
 			if otherTo := current.edges[other]; otherTo == -1 {
@@ -369,7 +369,7 @@ func greedyRepair(state alns.State, rnd *rand.Rand) (alns.State, error) {
 		})
 
 		current.edges[node] = nearest
-		current.edgesLen++
+		current.edgesCnt++
 		visited[nearest] = true
 	}
 
@@ -413,7 +413,7 @@ func randomRemoval(state alns.State, rnd *rand.Rand) (alns.State, error) {
 		if nodeTo := destroyed.edges[node]; nodeTo != -1 {
 			removed++
 			destroyed.edges[node] = -1
-			destroyed.edgesLen--
+			destroyed.edgesCnt--
 		}
 	}
 
@@ -431,7 +431,7 @@ func pathRemoval(state alns.State, rnd *rand.Rand) (alns.State, error) {
 	for range toRemove {
 		nextNode := destroyed.edges[node]
 		destroyed.edges[node] = -1
-		destroyed.edgesLen--
+		destroyed.edgesCnt--
 		node = nextNode
 	}
 
@@ -452,7 +452,7 @@ func worstRemoval(state alns.State, rnd *rand.Rand) (alns.State, error) {
 	toRemove := edgesToRemove(destroyed)
 	for idx := range toRemove {
 		destroyed.edges[worstEdges[len(worstEdges)-(idx+1)]] = -1
-		destroyed.edgesLen--
+		destroyed.edgesCnt--
 	}
 
 	return destroyed, nil
