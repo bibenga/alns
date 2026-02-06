@@ -378,11 +378,11 @@ func greedyRepair(state alns.State, rnd *rand.Rand) (alns.State, error) {
 
 func wouldFormSubcycle(fromNode, toNode int, state *TspState) bool {
 	for step := 1; step < len(state.nodes); step++ {
-		if toNodeTmp := state.edges[toNode]; toNodeTmp == -1 {
+		if toToNode := state.edges[toNode]; toToNode == -1 {
 			return false
 		} else {
 			// toNode = state.edges[toNode]
-			toNode = toNodeTmp
+			toNode = toToNode
 			if fromNode == toNode && step != len(state.nodes)-1 {
 				return true
 			}
