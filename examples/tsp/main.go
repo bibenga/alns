@@ -272,10 +272,10 @@ func euclidean(x1, y1, x2, y2 float64) float64 {
 }
 
 type TspState struct {
-	nodes     []int
-	edges     []int
-	edgesCnt  int
-	dists     [][]float64
+	nodes     []int       // static
+	dists     [][]float64 // static
+	edges     []int       // edges[From] -> To
+	edgesCnt  int         // the count of valid edges
 	objective float64
 }
 
@@ -290,9 +290,9 @@ func NewTspState(nodes []int, edges []int, dists [][]float64) *TspState {
 	}
 	return &TspState{
 		nodes:     nodes,
+		dists:     dists,
 		edges:     edges,
 		edgesCnt:  edgesLen,
-		dists:     dists,
 		objective: math.NaN(),
 	}
 }
@@ -300,9 +300,9 @@ func NewTspState(nodes []int, edges []int, dists [][]float64) *TspState {
 func (s *TspState) Clone() *TspState {
 	return &TspState{
 		nodes:     s.nodes,
+		dists:     s.dists,
 		edges:     slices.Clone(s.edges),
 		edgesCnt:  s.edgesCnt,
-		dists:     s.dists,
 		objective: math.NaN(),
 	}
 }
