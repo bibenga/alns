@@ -255,8 +255,6 @@ var Coords = [][2]float64{
 	{84, 6},
 	{107, 27},
 }
-var TotalNodes = len(Coords)
-var MinNode, MaxNode = 0, TotalNodes - 1
 
 func dists(coords [][2]float64) [][]float64 {
 	dist := make([][]float64, len(coords))
