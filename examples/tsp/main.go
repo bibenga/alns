@@ -39,7 +39,7 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	dists := dists(Coords)
+	dists := calcDists(Coords)
 	nodes := make([]int, len(Coords))
 	edges := make([]int, len(Coords))
 	for i := range len(Coords) {
@@ -256,7 +256,7 @@ var Coords = [][2]float64{
 	{107, 27},
 }
 
-func dists(coords [][2]float64) [][]float64 {
+func calcDists(coords [][2]float64) [][]float64 {
 	dist := make([][]float64, len(coords))
 	for row, coord1 := range coords {
 		dist[row] = make([]float64, len(coords))
