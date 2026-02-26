@@ -44,7 +44,7 @@ func main() {
 	edges := make([]int, len(Coords))
 	for i := range len(Coords) {
 		nodes[i] = i
-		edges[i] = -1
+		edges[i] = InvalidNode
 	}
 
 	rnd := rand.New(rand.NewPCG(12, 34))
@@ -121,6 +121,8 @@ func main() {
 
 	writeDotFile("examples/tsp/tsp.dot", Coords, best.edges)
 }
+
+const InvalidNode = -1
 
 var Coords = [][2]float64{
 	{0, 13},
@@ -284,7 +286,7 @@ var _ alns.State = &TspState{}
 func NewTspState(nodes []int, edges []int, dists [][]float64) *TspState {
 	edgesLen := 0
 	for _, nodeTo := range edges {
-		if nodeTo != -1 {
+		if nodeTo != InvalidNode {
 			edgesLen++
 		}
 	}
@@ -329,7 +331,7 @@ func greedyRepair(state alns.State, rnd *rand.Rand) (alns.State, error) {
 
 	visited := make([]bool, len(current.nodes))
 	for _, nodeTo := range current.edges {
-		if nodeTo != -1 {
+		if nodeTo != InvalidNode {
 			visited[nodeTo] = true
 		}
 	}
@@ -341,14 +343,14 @@ func greedyRepair(state alns.State, rnd *rand.Rand) (alns.State, error) {
 	}
 
 	for current.edgesCnt != len(current.nodes) {
-		var node = -1
+		var node = InvalidNode
 		for _, other := range nodes {
-			if otherTo := current.edges[other]; otherTo == -1 {
+			if otherTo := current.edges[other]; otherTo == InvalidNode {
 				node = other
 				break
 			}
 		}
-		if node == -1 {
+		if node == InvalidNode {
 			panic(fmt.Errorf("node not found"))
 		}
 
@@ -376,7 +378,7 @@ func greedyRepair(state alns.State, rnd *rand.Rand) (alns.State, error) {
 
 func wouldFormSubcycle(fromNode, toNode int, state *TspState) bool {
 	for step := 1; step < len(state.nodes); step++ {
-		if toToNode := state.edges[toNode]; toToNode == -1 {
+		if toToNode := state.edges[toNode]; toToNode == InvalidNode {
 			return false
 		} else {
 			// toNode = state.edges[toNode]
@@ -408,9 +410,9 @@ func randomRemoval(state alns.State, rnd *rand.Rand) (alns.State, error) {
 	for removed != toRemove {
 		idx := rnd.IntN(len(destroyed.nodes))
 		node := destroyed.nodes[idx]
-		if nodeTo := destroyed.edges[node]; nodeTo != -1 {
+		if nodeTo := destroyed.edges[node]; nodeTo != InvalidNode {
 			removed++
-			destroyed.edges[node] = -1
+			destroyed.edges[node] = InvalidNode
 			destroyed.edgesCnt--
 		}
 	}
@@ -428,7 +430,7 @@ func pathRemoval(state alns.State, rnd *rand.Rand) (alns.State, error) {
 
 	for range toRemove {
 		nextNode := destroyed.edges[node]
-		destroyed.edges[node] = -1
+		destroyed.edges[node] = InvalidNode
 		destroyed.edgesCnt--
 		node = nextNode
 	}
@@ -449,7 +451,7 @@ func worstRemoval(state alns.State, rnd *rand.Rand) (alns.State, error) {
 
 	toRemove := edgesToRemove(destroyed)
 	for idx := range toRemove {
-		destroyed.edges[worstEdges[len(worstEdges)-(idx+1)]] = -1
+		destroyed.edges[worstEdges[len(worstEdges)-(idx+1)]] = InvalidNode
 		destroyed.edgesCnt--
 	}
 
