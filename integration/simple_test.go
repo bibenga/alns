@@ -1,4 +1,4 @@
-package simple
+package integration
 
 import (
 	"math/rand/v2"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/bibenga/alns"
 	"github.com/bibenga/alns/internal/testutil"
+	"github.com/bibenga/alns/simple"
 )
 
 func TestIterate(t *testing.T) {
@@ -40,7 +41,7 @@ func TestIterate(t *testing.T) {
 
 	const total = 100
 
-	res, err := Iterate(
+	res, err := simple.Iterate(
 		&initialSolution,
 		destroyOperators,
 		repairOperators,
