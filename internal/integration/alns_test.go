@@ -71,12 +71,12 @@ func TestAlns(t *testing.T) {
 	if len(res.Statistics.Objectives) != total+1 {
 		t.Errorf("%d objectives expected, actual %d objectives", total+1, len(res.Statistics.Objectives))
 	}
-	repairOperatorCounts := alns.OperatorStatistics{bestCount, 0, 0, total - bestCount}
+	repairOperatorCounts := alns.OperatorCounts{bestCount, 0, 0, total - bestCount}
 	if res.Statistics.RepairOperatorCounts[0] != repairOperatorCounts {
 		t.Errorf("expected repair opeator statistics %v, actual %v",
 			repairOperatorCounts, res.Statistics.RepairOperatorCounts[0])
 	}
-	rejectOperatorCounts := alns.OperatorStatistics{bestCount, 0, 0, total - bestCount}
+	rejectOperatorCounts := alns.OperatorCounts{bestCount, 0, 0, total - bestCount}
 	if res.Statistics.DestroyOperatorCounts[0] != rejectOperatorCounts {
 		t.Errorf("expected destory opeator statistics %v, actual %v",
 			rejectOperatorCounts, res.Statistics.DestroyOperatorCounts[0])

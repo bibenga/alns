@@ -109,9 +109,8 @@ func main() {
 	}
 	if len(stat.Objectives) > 0 {
 		fmt.Println("objectives")
-		for i, objective := range stat.Objectives {
-			elapsed := stat.Runtimes[i]
-			fmt.Printf("%4d: %12s - %.4f\n", i, elapsed, objective)
+		for i, r := range stat.Objectives {
+			fmt.Printf("%4d: %12s - %.4f\n", i, r.ElapsedTime, r.Objective)
 		}
 	} else {
 		fmt.Println("the objectives were not collected")

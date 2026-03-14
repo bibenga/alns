@@ -6,26 +6,23 @@ import (
 )
 
 type Statistics struct {
-	IterationCount        int                  // the number of iterations
-	TotalRuntime          time.Duration        // the total runtime
-	Runtimes              []time.Duration      // run times
-	Objectives            []float64            // previous objective values, tracking progress
-	DestroyOperatorCounts []OperatorStatistics // the destroy operator counts
-	RepairOperatorCounts  []OperatorStatistics // the repair operator counts
+	IterationCount        int               // the number of iterations
+	TotalRuntime          time.Duration     // the total runtime
+	Objectives            []ObjectiveRecord // previous objective values, tracking progress
+	DestroyOperatorCounts []OperatorCounts  // the destroy operator counts
+	RepairOperatorCounts  []OperatorCounts  // the repair operator counts
 }
 
 func newStatistics(numDestroy, numRepair int) Statistics {
 	return Statistics{
-		Runtimes:              make([]time.Duration, 0, 128),
-		Objectives:            make([]float64, 0, 128),
-		DestroyOperatorCounts: make([]OperatorStatistics, numDestroy),
-		RepairOperatorCounts:  make([]OperatorStatistics, numRepair),
+		Objectives:            make([]ObjectiveRecord, 0, 128),
+		DestroyOperatorCounts: make([]OperatorCounts, numDestroy),
+		RepairOperatorCounts:  make([]OperatorCounts, numRepair),
 	}
 }
 
-func (s *Statistics) collectObjective(t time.Duration, objective float64) {
-	s.Runtimes = append(s.Runtimes, t)
-	s.Objectives = append(s.Objectives, objective)
+func (s *Statistics) collectObjective(elapsedTime time.Duration, objective float64) {
+	s.Objectives = append(s.Objectives, ObjectiveRecord{ElapsedTime: elapsedTime, Objective: objective})
 }
 
 func (s *Statistics) collectOperators(dIdx, rIdx int, outcome Outcome) {
@@ -33,9 +30,14 @@ func (s *Statistics) collectOperators(dIdx, rIdx int, outcome Outcome) {
 	s.RepairOperatorCounts[rIdx][outcome]++
 }
 
-type OperatorStatistics [4]int // see Outcome
+type ObjectiveRecord struct {
+	ElapsedTime time.Duration
+	Objective   float64
+}
 
-func (o OperatorStatistics) String() string {
+type OperatorCounts [4]int // see Outcome
+
+func (o OperatorCounts) String() string {
 	return fmt.Sprintf(
 		"{%s:%d %s:%d %s:%d %s:%d}",
 		Best, o[Best],
