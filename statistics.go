@@ -6,7 +6,7 @@ import (
 )
 
 type Statistics struct {
-	IterationCount        int               // the number of iterations
+	IterationCount        uint              // the number of iterations
 	TotalRuntime          time.Duration     // the total runtime
 	Objectives            []ObjectiveRecord // previous objective values, tracking progress
 	DestroyOperatorCounts []OperatorCounts  // the destroy operator counts
@@ -35,7 +35,7 @@ type ObjectiveRecord struct {
 	Objective   float64
 }
 
-type OperatorCounts [4]int // see Outcome
+type OperatorCounts [4]uint // see Outcome
 
 func (o OperatorCounts) String() string {
 	return fmt.Sprintf(

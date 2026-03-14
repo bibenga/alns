@@ -29,8 +29,8 @@ func TestAlns(t *testing.T) {
 		CollectObjectives: true,
 	}
 
-	bestCount := 0
-	destroyCalled := 0
+	bestCount := uint(0)
+	destroyCalled := uint(0)
 	a.DestroyOperators = append(a.DestroyOperators,
 		func(state alns.State, rnd *rand.Rand) (alns.State, error) {
 			destroyCalled++
@@ -76,7 +76,7 @@ func TestAlns(t *testing.T) {
 		t.Errorf("expected repair opeator statistics %v, actual %v",
 			repairOperatorCounts, res.Statistics.RepairOperatorCounts[0])
 	}
-	rejectOperatorCounts := alns.OperatorCounts{bestCount, 0, 0, total - bestCount}
+	rejectOperatorCounts := alns.OperatorCounts{uint(bestCount), 0, 0, total - bestCount}
 	if res.Statistics.DestroyOperatorCounts[0] != rejectOperatorCounts {
 		t.Errorf("expected destory opeator statistics %v, actual %v",
 			rejectOperatorCounts, res.Statistics.DestroyOperatorCounts[0])
