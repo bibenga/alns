@@ -17,9 +17,11 @@ type ALNS struct {
 
 func NewAlns(rnd *rand.Rand, dOps, rOps []Operator) *ALNS {
 	return &ALNS{
-		Rnd:              rnd,
-		DestroyOperators: dOps,
-		RepairOperators:  rOps,
+		Rnd:               rnd,
+		CollectObjectives: false,
+		Listener:          nil,
+		DestroyOperators:  dOps,
+		RepairOperators:   rOps,
 	}
 }
 
