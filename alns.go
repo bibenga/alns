@@ -1,6 +1,7 @@
 package alns
 
 import (
+	"log/slog"
 	"math/rand/v2"
 	"time"
 )
@@ -8,6 +9,7 @@ import (
 type Listener func(outcome Outcome, cand State) error
 
 type ALNS struct {
+	Logger            *slog.Logger
 	Rnd               *rand.Rand
 	CollectObjectives bool
 	Listener          Listener
@@ -17,6 +19,7 @@ type ALNS struct {
 
 func NewAlns(rnd *rand.Rand, dOps, rOps []Operator) *ALNS {
 	return &ALNS{
+		Logger:            nil,
 		Rnd:               rnd,
 		CollectObjectives: false,
 		Listener:          nil,
@@ -43,6 +46,10 @@ func (a *ALNS) Iterate(
 	curr := initSol
 	best := initSol
 
+	if a.Logger != nil {
+		a.Logger.Info("Initial solution objective", "objective", initSol.Objective())
+	}
+
 	stats := newStatistics(len(a.DestroyOperators), len(a.RepairOperators))
 
 	started := time.Now()
@@ -62,6 +69,10 @@ func (a *ALNS) Iterate(
 		}
 		destroyOp := a.DestroyOperators[dIdx]
 		repairOp := a.RepairOperators[rIdx]
+
+		if a.Logger != nil {
+			a.Logger.Debug("Selected operators", "destroy", dIdx, "repair", rIdx)
+		}
 
 		destroyed, err := destroyOp(curr, a.Rnd)
 		if err != nil {
@@ -90,6 +101,12 @@ func (a *ALNS) Iterate(
 		stats.collectOperators(dIdx, rIdx, outcome)
 	}
 	stats.TotalRuntime = time.Since(started)
+
+	if a.Logger != nil {
+		a.Logger.Info("Finished iterating",
+			"duration", stats.TotalRuntime,
+			"best", best.Objective())
+	}
 
 	result := Result{
 		BestState:  best,
@@ -137,6 +154,9 @@ func (a *ALNS) determineOutcome(accept AcceptanceCriterion, best, curr, cand Sta
 	if cand.Objective() < best.Objective() {
 		// candidate is new best
 		outcome = Best
+		if a.Logger != nil {
+			a.Logger.Info("New best solution", "objective", cand.Objective())
+		}
 	}
 
 	return outcome, nil
