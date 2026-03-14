@@ -6,15 +6,15 @@ import (
 	"github.com/bibenga/alns"
 )
 
-type StoppingCriterions []alns.StoppingCriterion
+type MultipleStoppingCriterions []alns.StoppingCriterion
 
-var _ alns.StoppingCriterion = StoppingCriterions{}
+var _ alns.StoppingCriterion = MultipleStoppingCriterions{}
 
-func NewStoppingCriterions(criterions ...alns.StoppingCriterion) StoppingCriterions {
+func NewMultipleStoppingCriterions(criterions ...alns.StoppingCriterion) MultipleStoppingCriterions {
 	return criterions
 }
 
-func (s StoppingCriterions) IsDone(rnd *rand.Rand, best, current alns.State) (bool, error) {
+func (s MultipleStoppingCriterions) IsDone(rnd *rand.Rand, best, current alns.State) (bool, error) {
 	if len(s) == 0 {
 		panic("no criterias were specified")
 	}

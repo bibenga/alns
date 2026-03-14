@@ -6,8 +6,8 @@ import (
 	"github.com/bibenga/alns/stop/maxiterations"
 )
 
-func TestStoppingCriterions(t *testing.T) {
-	stop := StoppingCriterions{
+func TestMultipleStoppingCriterions(t *testing.T) {
+	stop := MultipleStoppingCriterions{
 		&maxiterations.MaxIterations{MaxIterations: 10},
 		&maxiterations.MaxIterations{MaxIterations: 20},
 	}
