@@ -14,16 +14,10 @@ type Statistics struct {
 	RepairOperatorCounts  []OperatorStatistics // the repair operator counts
 }
 
-func newStatistics(numIterations int, numDestroy, numRepair int) Statistics {
-	var runtimes []time.Duration
-	var objectives []float64
-	if numIterations > 0 {
-		runtimes = make([]time.Duration, 0, numIterations+1)
-		objectives = make([]float64, 0, numIterations+1)
-	}
+func newStatistics(numDestroy, numRepair int) Statistics {
 	return Statistics{
-		Runtimes:              runtimes,
-		Objectives:            objectives,
+		Runtimes:              make([]time.Duration, 0, 128),
+		Objectives:            make([]float64, 0, 128),
 		DestroyOperatorCounts: make([]OperatorStatistics, numDestroy),
 		RepairOperatorCounts:  make([]OperatorStatistics, numRepair),
 	}

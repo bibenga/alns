@@ -1,4 +1,4 @@
-package alns
+package math
 
 import (
 	"math/rand/v2"
@@ -20,7 +20,7 @@ func TestWeightedRandomIndex(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			got := weightedRandomIndex(r, tt.weights)
+			got := WeightedRandomIndex(r, tt.weights)
 			if got != tt.want {
 				t.Errorf("weights=%v: got %d, want %d", tt.weights, got, tt.want)
 			}
@@ -35,12 +35,12 @@ func TestWeightedRandomIndex(t *testing.T) {
 		counts := make([]int, len(weights))
 
 		for range total {
-			idx := weightedRandomIndex(r, weights)
+			idx := WeightedRandomIndex(r, weights)
 			counts[idx]++
 		}
 
 		// Let's check that the frequencies roughly match the weight fractions
-		sum := sum(weights)
+		sum := Sum(weights)
 		for i, w := range weights {
 			expected := (w / sum) * float64(total)
 			got := float64(counts[i])

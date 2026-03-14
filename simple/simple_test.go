@@ -1,34 +1,37 @@
-package alns
+package simple
 
 import (
 	"math/rand/v2"
 	"testing"
+
+	"github.com/bibenga/alns"
+	"github.com/bibenga/alns/internal/testutil"
 )
 
 func TestIterate(t *testing.T) {
 	lastBest := rand.Float64()
-	initialSolution := FakeState{objective: lastBest}
+	initialSolution := testutil.FakeState{Value: lastBest}
 
 	bestCount := 0
 	destroyCalled := 0
 
-	destroyOperators := []Operator{
-		func(state State, rnd *rand.Rand) (State, error) {
+	destroyOperators := []alns.Operator{
+		func(state alns.State, rnd *rand.Rand) (alns.State, error) {
 			destroyCalled++
-			current := state.(*FakeState)
+			current := state.(*testutil.FakeState)
 			destroyed := current.Clone()
 			return destroyed, nil
 		},
 	}
 
 	repairCalled := 0
-	repairOperators := []Operator{
-		func(state State, rnd *rand.Rand) (State, error) {
+	repairOperators := []alns.Operator{
+		func(state alns.State, rnd *rand.Rand) (alns.State, error) {
 			repairCalled++
-			current := state.(*FakeState)
-			current.objective = rand.Float64()
-			if current.objective < lastBest {
-				lastBest = current.objective
+			current := state.(*testutil.FakeState)
+			current.Value = rand.Float64()
+			if current.Value < lastBest {
+				lastBest = current.Value
 				bestCount++
 			}
 			return current, nil

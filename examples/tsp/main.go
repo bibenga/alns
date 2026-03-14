@@ -12,6 +12,9 @@ import (
 	"slices"
 
 	"github.com/bibenga/alns"
+	"github.com/bibenga/alns/accept/hillclimbing"
+	"github.com/bibenga/alns/select/roulettewheel"
+	"github.com/bibenga/alns/stop/maxiterations"
 )
 
 func main() {
@@ -65,7 +68,7 @@ func main() {
 	repairOperatorNames := []string{"greedyRepair"}
 	repairOperators := []alns.Operator{greedyRepair}
 
-	sel, err := alns.NewRouletteWheel(
+	sel, err := roulettewheel.NewRouletteWheel(
 		[4]float64{3, 2, 1, 0.5},
 		0.8,
 		len(destroyOperators),
@@ -75,15 +78,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	accept := alns.HillClimbing{}
-	// stop := alns.MaxRuntime{MaxRuntime: 2 * time.Second}
-	stop := alns.MaxIterations{MaxIterations: 2000}
+	accept := hillclimbing.NewHillClimbing()
+	// stop := maxruntime.MaxRuntime{MaxRuntime: 2 * time.Second}
+	stop := maxiterations.NewMaxIterations(2000)
 
-	a := alns.ALNS{
-		Rnd:              rnd,
-		DestroyOperators: destroyOperators,
-		RepairOperators:  repairOperators,
-	}
+	a := alns.NewAlns(rnd, destroyOperators, repairOperators)
 
 	result, err := a.Iterate(initSol, &sel, &accept, &stop)
 	if err != nil {

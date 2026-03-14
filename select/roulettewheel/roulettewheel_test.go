@@ -1,8 +1,11 @@
-package alns
+package roulettewheel
 
 import (
 	"math/rand/v2"
 	"testing"
+
+	"github.com/bibenga/alns"
+	"github.com/bibenga/alns/internal/testutil"
 )
 
 func TestRouletteWheel(t *testing.T) {
@@ -56,16 +59,16 @@ func TestRouletteWheel(t *testing.T) {
 
 		selector, _ := NewRouletteWheel([4]float64{3, 2, 1, 0.5}, 0.8, 3, 2, nil)
 
-		best := FakeState{}
-		current := FakeState{}
-		candidate := FakeState{}
+		best := testutil.FakeState{}
+		current := testutil.FakeState{}
+		candidate := testutil.FakeState{}
 
 		dCounter := make([]int, 3)
 		rCounter := make([]int, 2)
 		total := 10000
 
 		for range total {
-			outcome := Outcome(r.IntN(4))
+			outcome := alns.Outcome(r.IntN(4))
 
 			dIdx, rIdx, err := selector.Select(r, best, current)
 			if err != nil {
@@ -101,16 +104,16 @@ func TestRouletteWheel(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		best := FakeState{}
-		current := FakeState{}
-		candidate := FakeState{}
+		best := testutil.FakeState{}
+		current := testutil.FakeState{}
+		candidate := testutil.FakeState{}
 
 		dCounter := make([]int, selector.numDestroy)
 		rCounter := make([]int, selector.numRepair)
 		total := 10000
 
 		for range total {
-			outcome := Outcome(r.IntN(4))
+			outcome := alns.Outcome(r.IntN(4))
 
 			dIdx, rIdx, err := selector.Select(r, best, current)
 			if err != nil {

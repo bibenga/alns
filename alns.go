@@ -15,6 +15,18 @@ type ALNS struct {
 	RepairOperators   []Operator
 }
 
+func NewAlns(rnd *rand.Rand, dOps, rOps []Operator) *ALNS {
+	return &ALNS{
+		Rnd:              rnd,
+		DestroyOperators: dOps,
+		RepairOperators:  rOps,
+	}
+}
+
+func NewDefaultAlns(dOps, rOps []Operator) *ALNS {
+	return NewAlns(RuntimeRand, dOps, rOps)
+}
+
 // def iterate(initial_solution, select, accept, stop)
 func (a *ALNS) Iterate(
 	initSol State,
@@ -29,13 +41,7 @@ func (a *ALNS) Iterate(
 	curr := initSol
 	best := initSol
 
-	numIterations := 0
-	if a.CollectObjectives {
-		if maxIterations, ok := stop.(*MaxIterations); ok {
-			numIterations = maxIterations.MaxIterations + 1
-		}
-	}
-	stats := newStatistics(numIterations, len(a.DestroyOperators), len(a.RepairOperators))
+	stats := newStatistics(len(a.DestroyOperators), len(a.RepairOperators))
 
 	started := time.Now()
 	if a.CollectObjectives {

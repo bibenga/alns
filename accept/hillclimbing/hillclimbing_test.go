@@ -1,15 +1,17 @@
-package alns
+package hillclimbing
 
 import (
 	"testing"
+
+	"github.com/bibenga/alns/internal/testutil"
 )
 
 func TestHillClimbing(t *testing.T) {
 	accept := HillClimbing{}
 
-	best := FakeState{objective: 2}
-	curr := FakeState{objective: 2.1}
-	cand := FakeState{objective: 1.9}
+	best := testutil.NewFakeState(2)
+	curr := testutil.NewFakeState(2.1)
+	cand := testutil.NewFakeState(1.9)
 
 	accepted, err := accept.Accept(nil, best, curr, cand)
 	if err != nil {
@@ -19,7 +21,7 @@ func TestHillClimbing(t *testing.T) {
 		t.Fatal("expected to be accepted")
 	}
 
-	cand = FakeState{objective: 2.9}
+	cand = testutil.NewFakeState(2.9)
 	accepted, err = accept.Accept(nil, best, curr, cand)
 	if err != nil {
 		t.Fatal(err)
