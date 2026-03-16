@@ -18,8 +18,8 @@ import "github.com/bibenga/alns"
 ```go
 initSol := NewMyProblemState(...)
 
-destroyOperators := []alns.Operator{randomRemoval, pathRemoval, worstRemoval}
-repairOperators := []alns.Operator{greedyRepair}
+destroyOperators := []alns.Operator{destroyOperator1, destroyOperator2}
+repairOperators := []alns.Operator{repairOperator1, repairOperator2}
 
 selector, err := alns.NewRouletteWheel(
     [4]float64{3, 2, 1, 0.5},
@@ -31,20 +31,11 @@ selector, err := alns.NewRouletteWheel(
 if err != nil {
     ...
 }
-acceptor := alns.HillClimbing{}
-stop := alns.MaxRuntime{MaxRuntime: 1 * time.Second}
+acceptor := hillclimbing.NewHillClimbing()
+stop := maxiterations.NewMaxIterations(2000)
 
-a := alns.ALNS{
-    Rnd:               rnd,
-    DestroyOperators:  destroyOperators,
-    RepairOperators:   repairOperators,
-    Selector:          &selector,
-    Acceptor:          &acceptor,
-    Stop:              &stop,
-    InitialSolution:   initSol,
-}
-
-if result, err := a.Iterate(); err != nil {
+solver := NewAlns(rnd, destroyOperators, repairOperators)
+if result, err := solver.Iterate(); err != nil {
     ...
 } else {
     // do something with result
