@@ -25,15 +25,8 @@ func Iterate(
 	if err != nil {
 		return nil, err
 	}
-
 	acceptor := hillclimbing.NewHillClimbing()
 	stop := maxiterations.NewMaxIterations(maxIterations)
-
-	a := alns.ALNS{
-		Rnd:               alns.RuntimeRand,
-		CollectObjectives: false,
-		DestroyOperators:  destroyOperators,
-		RepairOperators:   repairOperators,
-	}
-	return a.Iterate(initial, &selector, &acceptor, &stop)
+	solver := alns.NewDefaultAlns(destroyOperators, repairOperators)
+	return solver.Iterate(initial, &selector, &acceptor, &stop)
 }
