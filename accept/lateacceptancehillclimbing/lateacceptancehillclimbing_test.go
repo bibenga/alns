@@ -53,7 +53,10 @@ func TestProperties(t *testing.T) {
 }
 
 func TestZeroLookbackPeriod(t *testing.T) {
-	cases := []struct{ greedy, betterHistory bool }{
+	cases := []struct {
+		greedy        bool
+		betterHistory bool
+	}{
 		{false, false}, {true, false}, {false, true}, {true, true},
 	}
 	for _, tc := range cases {
