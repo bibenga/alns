@@ -97,7 +97,7 @@ func TestAccept(t *testing.T) {
 				if err != nil || !ok {
 					t.Error("expected initial accept")
 				}
-				for i := 0; i < lp; i++ {
+				for i := range lp {
 					// Historical current is 2, candidate is 1 → should accept.
 					ok, err = lahc.Accept(nil, testutil.Zero(), testutil.One(), testutil.One())
 					if err != nil || !ok {
@@ -116,9 +116,13 @@ func TestReject(t *testing.T) {
 			func(t *testing.T) {
 				lahc, _ := NewLateAcceptanceHillClimbing(lp, false, false)
 
-				for i := 0; i < lp; i++ {
-					lahc.Accept(nil, testutil.Zero(), testutil.One(), testutil.Zero())
+				for i := range lp {
+					ok, err := lahc.Accept(nil, testutil.Zero(), testutil.One(), testutil.Zero())
+					if err != nil || !ok {
+						t.Errorf("iter=%d: expected accept", i)
+					}
 				}
+
 				// Historical current is 1, candidate is 1 → reject (not strictly better).
 				ok, err := lahc.Accept(nil, testutil.Zero(), testutil.Zero(), testutil.One())
 				if err != nil || ok {
@@ -140,7 +144,7 @@ func TestGreedyAccept(t *testing.T) {
 				if err != nil || ok {
 					t.Error("expected reject: candidate(2) worse than current(0)")
 				}
-				for i := 0; i < lp; i++ {
+				for i := range lp {
 					// Candidate(1) < current(2), accepted greedily despite historical=1.
 					ok, err = lahc.Accept(nil, testutil.Zero(), testutil.Two(), testutil.One())
 					if err != nil || !ok {
@@ -163,11 +167,13 @@ func TestBetterHistorySmallExample(t *testing.T) {
 	if err != nil || !ok {
 		t.Error("step2: expected accept")
 	}
+
 	// Previous current stays at 1 because 2 was not better than historical.
 	ok, err = lahc.Accept(nil, testutil.Zero(), testutil.Zero(), testutil.One())
 	if err != nil || ok {
 		t.Error("step3: expected reject")
 	}
+
 	// Previous current is updated to Zero.
 	ok, err = lahc.Accept(nil, testutil.Zero(), testutil.Zero(), testutil.Zero())
 	if err != nil || ok {
@@ -182,20 +188,20 @@ func TestBetterHistoryReject(t *testing.T) {
 			func(t *testing.T) {
 				lahc, _ := NewLateAcceptanceHillClimbing(lp, false, true)
 
-				for i := 0; i < lp; i++ {
+				for i := range lp {
 					ok, err := lahc.Accept(nil, testutil.Zero(), testutil.One(), testutil.Two())
 					if err != nil || ok {
 						t.Errorf("phase1 iter=%d: expected reject", i)
 					}
 				}
-				for i := 0; i < lp; i++ {
+				for i := range lp {
 					// Current solutions not stored because they are worse than historical.
 					ok, err := lahc.Accept(nil, testutil.Zero(), testutil.Two(), testutil.Two())
 					if err != nil || ok {
 						t.Errorf("phase2 iter=%d: expected reject", i)
 					}
 				}
-				for i := 0; i < lp; i++ {
+				for i := range lp {
 					// Candidates(1) do not improve historical solutions(1).
 					ok, err := lahc.Accept(nil, testutil.Zero(), testutil.Two(), testutil.One())
 					if err != nil || ok {
