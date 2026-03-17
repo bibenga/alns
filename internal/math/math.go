@@ -2,6 +2,7 @@ package math
 
 import (
 	"math/rand/v2"
+	"time"
 )
 
 func WeightedRandomIndex(rnd *rand.Rand, weights []float64) int {
@@ -29,4 +30,21 @@ func Sum(weights []float64) float64 {
 		sum += w
 	}
 	return sum
+}
+
+type Request struct {
+	// hot data
+	Id                   uint32 // 22 bit
+	SrcId                uint16 // 9 bit
+	DstId                uint16 // 9 bit
+	Vol                  uint32 // 24 bit
+	Quant                int16  // 12 bit
+	AvailabilityDateUnix int64
+	DeadlineDateUnix     int64
+	Transit              []uint8
+	// cold data
+	Sla              time.Duration
+	Cid              string
+	AvailabilityDate time.Time
+	DeadlineDate     time.Time
 }
